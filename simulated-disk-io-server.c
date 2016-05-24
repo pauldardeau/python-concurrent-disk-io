@@ -78,43 +78,25 @@ void handle_socket_request(ThreadRequest* thread_request) {
                 // assume the worst
                 rc = STATUS_BAD_INPUT;
 
-                // look for field delimiter in request
-                const char fld_delimiter = ',';
-                const char* first_delimiter =
-                    strchr(request_text, fld_delimiter);
-                if (first_delimiter > request_text) {
-                    const char* second_delimiter =
-                        strchr(first_delimiter+1, fld_delimiter);
-                    if (second_delimiter > (first_delimiter+1)) {
-                        const int num_rc_digits =
-                            first_delimiter - request_text;
-                        const int num_req_time_digits =
-                            second_delimiter - first_delimiter - 1;
-                        if ((num_rc_digits > 0) &&
-                            (num_rc_digits < 10) &&
-                            (num_req_time_digits > 0) &&
-                            (num_req_time_digits < 10)) {
+                // tokenize input
+                char* save_ptr;
+                char* rc_digits = strtok_r(request_text, ",", &save_ptr);
+                char* req_time_digits = strtok_r(NULL, ",", &save_ptr);
+                file_path = strtok_r(NULL, ",", &save_ptr);
+                if ((rc_digits != NULL) &&
+                    (req_time_digits != NULL) &&
+                    (file_path != NULL) &&
+                    (strlen(rc_digits) > 0) &&
+                    (strlen(req_time_digits) > 0) &&
+                    (strlen(file_path) > 0)) {
 
-                            char rc_digits[10];
-                            char req_time_digits[10];
-                            memset(rc_digits, 0, sizeof(rc_digits));
-                            memset(req_time_digits, 0, sizeof(req_time_digits));
-                            strncpy(rc_digits,
-                                    request_text,
-                                    num_rc_digits);
-                            strncpy(req_time_digits,
-                                    first_delimiter+1,
-                                    num_req_time_digits);
-                            const int rc_input = atoi(rc_digits);
-                            const long req_time = atol(req_time_digits);
-                            if (req_time >= 0L) {
-                                rc = rc_input;
-                                disk_read_time_ms = req_time;
-                                file_path = second_delimiter + 1;
-                                // ****  simulate disk read  ****
-                                simulated_file_read(disk_read_time_ms);
-                            }
-                        }
+                    const int rc_input = atoi(rc_digits);
+                    const long req_time = atol(req_time_digits);
+                    if (req_time >= 0L) {
+                        rc = rc_input;
+                        disk_read_time_ms = req_time;
+                        // ****  simulate disk read  ****
+                        simulated_file_read(disk_read_time_ms);
                     }
                 }
             }
