@@ -12,8 +12,6 @@ namespace diskioserver {
 
 public class SimulatedDiskIOServer {
 
-public static int NUM_WORKER_THREADS = 5;
-
 public static int READ_TIMEOUT_SECS = 4;
 
 public static int STATUS_OK = 0;

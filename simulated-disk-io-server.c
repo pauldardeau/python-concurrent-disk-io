@@ -21,8 +21,6 @@ typedef struct _ThreadRequest {
 } ThreadRequest;
 
 
-static const int NUM_WORKER_THREADS = 5;
-
 static const int READ_TIMEOUT_SECS = 4;
 
 static const int STATUS_OK = 0;

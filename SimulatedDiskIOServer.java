@@ -8,8 +8,6 @@ import java.util.*;
 
 public class SimulatedDiskIOServer {
 
-public static final int NUM_WORKER_THREADS = 5;
-
 public static final int READ_TIMEOUT_SECS = 4;
 
 public static final int STATUS_OK = 0;
