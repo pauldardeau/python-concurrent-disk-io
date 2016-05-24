@@ -71,7 +71,6 @@ def main(server_port):
             sock, addr = server_socket.accept()
             receipt_timestamp = time.time()
             Thread(target=lambda: handle_socket_request(sock, receipt_timestamp)).start()
-            #handle_socket_request(sock, receipt_timestamp)
     except KeyboardInterrupt:
         pass  # exit
 
