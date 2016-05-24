@@ -1,5 +1,5 @@
 # nim - simulate occasional problematic (long blocking) requests
-# to build:  nim c --threads:on --d:release SimulatedDiskIOServer.nim
+# to build: nim c --threads:on --d:release SimulatedDiskIOServer.nim
 
 # helpful link: http://goran.krampe.se/2014/10/25/nim-socketserver/
 
@@ -10,19 +10,16 @@ import strutils
 import threadpool
 import times
 
-
 const server_port = 7000
 const STATUS_OK = 0
 const STATUS_QUEUE_TIMEOUT = 1
 const STATUS_BAD_INPUT = 2
 
-
 proc simulated_file_read(elapsed_time_ms: int64) =
     sleep(int(elapsed_time_ms))
 
 proc current_time_millis(): int64 =
-    #TODO: implement current_time_millis
-    return int64(0)
+    return int64(epochTime() / 1000)
 
 proc handle_socket_request(client_socket: Socket, receipt_timestamp: int64) {.thread.} =
     try:
@@ -62,7 +59,6 @@ proc handle_socket_request(client_socket: Socket, receipt_timestamp: int64) {.th
     finally:
         client_socket.close()
 
-
 proc main(server_port: int) =
     let server_socket: Socket = newSocket()
     server_socket.setSockOpt(OptReuseAddr, true)
@@ -70,14 +66,14 @@ proc main(server_port: int) =
     server_socket.listen()
     echo("server listening on port " & $server_port)
 
-    #try:
-    while true:
-        var client_socket: Socket = Socket()
-        accept(server_socket, client_socket)
-        let receipt_timestamp = current_time_millis()
-        spawn handle_socket_request(client_socket, receipt_timestamp)
-    #except KeyboardInterrupt:
-    #    pass  # exit
+    try:
+        while true:
+            var client_socket: Socket = Socket()
+            accept(server_socket, client_socket)
+            let receipt_timestamp = current_time_millis()
+            spawn handle_socket_request(client_socket, receipt_timestamp)
+    finally:
+        server_socket.close()
 
 main(server_port)
 
