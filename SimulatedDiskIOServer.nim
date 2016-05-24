@@ -65,6 +65,7 @@ proc handle_socket_request(client_socket: Socket, receipt_timestamp: int64) {.th
 
 proc main(server_port: int) =
     let server_socket: Socket = newSocket()
+    server_socket.setSockOpt(OptReuseAddr, true)
     server_socket.bindAddr(Port(server_port), "127.0.0.1")
     server_socket.listen()
     echo("server listening on port " & $server_port)
