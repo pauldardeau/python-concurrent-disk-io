@@ -1,0 +1,191 @@
+// simulate occasional problematic (long blocking) requests within eventlet
+
+import java.net.*;
+import java.io.*;
+import java.util.*;
+
+
+class ReadResponse {
+    public int rc;
+    public int bytes_read;
+    public double elapsed_time;
+    public String file_path;
+
+    public ReadResponse(int rc, int bytes_read, double elapsed_time) {
+        this.rc = rc;
+        this.bytes_read = bytes_read;
+        this.elapsed_time = elapsed_time;
+    }
+
+    public String toString() {
+        String s = "" + rc + "," + bytes_read + "," + elapsed_time + ",";
+        if (file_path != null) {
+            s = s + file_path;
+        }
+        return s;
+    }
+}
+
+
+public class SimulatedDiskIOServer {
+
+public static int NUM_GREEN_THREADS = 5;
+
+public static int READ_TIMEOUT = 4;
+
+// status codes to indicate whether read succeeded, timed out, or failed
+public static int STATUS_READ_SUCCESS = 0;
+public static int STATUS_READ_TIMEOUT = 1;
+public static int STATUS_READ_IO_FAIL = 2;
+
+// percentage of requests that result in very long response times (many seconds)
+public static double PCT_LONG_IO_RESPONSE_TIMES = 0.10;
+
+// percentage of requests that result in IO failure
+public static double PCT_IO_FAIL = 0.001;
+
+// max size that would be read
+public static double MAX_READ_BYTES = 100000;
+
+// min/max values for io failure
+public static double MIN_TIME_FOR_IO_FAIL = 0.3;
+public static double MAX_TIME_FOR_IO_FAIL = 3.0;
+
+// min/max values for slow read (dying disk)
+public static double MIN_TIME_FOR_SLOW_IO = 6.0;
+public static double MAX_TIME_FOR_SLOW_IO = 20.0;
+
+// min/max values for normal io
+public static double MIN_TIME_FOR_NORMAL_IO = 0.075;
+public static double MAX_TIME_FOR_NORMAL_IO = 0.4;
+
+// maximum ADDITIONAL time above timeout experienced by requests that time out
+public static double MAX_TIME_ABOVE_TIMEOUT = MAX_TIME_FOR_SLOW_IO * 0.8;
+
+private static Random randomGenerator = new Random();
+
+
+public static double random_value_between(double min_value, double max_value) {
+    double rand_value = randomGenerator.nextDouble() * max_value;
+    if (rand_value < min_value) {
+        rand_value = min_value;
+    } 
+    return rand_value;
+}
+
+
+public static ReadResponse simulated_file_read(String file_path, int read_timeout) {
+    long start_time = System.currentTimeMillis();
+    int num_bytes_read = 0;
+    double rand_number = randomGenerator.nextDouble();
+    boolean request_with_slow_read = false;
+    int rc;
+    long elapsed_time = 0;
+
+    if (rand_number <= PCT_IO_FAIL) {
+        // simulate read io failure
+        rc = STATUS_READ_IO_FAIL;
+        elapsed_time = (long) (1000.0 * random_value_between(MIN_TIME_FOR_IO_FAIL, MAX_TIME_FOR_IO_FAIL));
+    } else {
+        rc = STATUS_READ_SUCCESS;
+        if (rand_number <= PCT_LONG_IO_RESPONSE_TIMES) {
+            // simulate very slow request
+            request_with_slow_read = true;
+            elapsed_time = (long) (1000.0 * random_value_between(MIN_TIME_FOR_SLOW_IO, MAX_TIME_FOR_SLOW_IO));
+        } else {
+            // simulate typical read response time
+            elapsed_time = (long) (1000.0 * random_value_between(MIN_TIME_FOR_NORMAL_IO, MAX_TIME_FOR_NORMAL_IO));
+        }
+        num_bytes_read = (int) (randomGenerator.nextDouble() * MAX_READ_BYTES);
+    }
+
+    if (elapsed_time > read_timeout && !request_with_slow_read) {
+        rc = STATUS_READ_TIMEOUT;
+        elapsed_time = (long) (1000.0 * random_value_between(0, MAX_TIME_ABOVE_TIMEOUT));
+        num_bytes_read = 0;
+    }
+
+    try {
+        Thread.sleep(elapsed_time);
+    } catch (InterruptedException ignored) {
+    }
+
+    long end_time = System.currentTimeMillis();
+
+    if (rc == STATUS_READ_TIMEOUT) {
+        System.out.println("timeout (assigned)");
+    } else if (rc == STATUS_READ_IO_FAIL) {
+        System.out.println("io fail");
+    } else if (rc == STATUS_READ_SUCCESS) {
+        // what would otherwise have been a successful read turns into a
+        // timeout error if simulated execution time exceeds timeout value
+        long exec_time = end_time - start_time;
+        if (exec_time > read_timeout) {
+            //TODO: it would be nice to increment a counter here and show
+            // the counter value as part of print
+            System.out.println("timeout (service)");
+            rc = STATUS_READ_TIMEOUT;
+            num_bytes_read = 0;
+            elapsed_time = exec_time;
+        }
+    }
+
+    return new ReadResponse(rc, num_bytes_read, elapsed_time);
+}
+
+public static void handle_socket_request(Socket sock) {
+    BufferedReader reader = null;
+    BufferedWriter writer = null;
+    try {
+        reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+        writer = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
+        String file_path = reader.readLine();
+        if (file_path != null && file_path.length() > 0) {
+            ReadResponse read_resp = simulated_file_read(file_path, READ_TIMEOUT);
+            writer.write(read_resp.toString() + "\n");
+            writer.flush();
+        }
+    } catch (IOException e) {
+        e.printStackTrace();
+    } finally {
+        if (reader != null) {
+            try {
+                reader.close();
+            } catch (IOException ignored) {
+            }
+        }
+        if (writer != null) {
+            try { 
+                writer.close();
+            } catch (IOException ignored) {
+            }
+        }
+        try {
+            sock.close();
+        } catch (IOException ignored) {
+        }
+    }
+}
+
+
+public static void main(String[] args) {
+    int server_port = 6000;
+    try {
+        ServerSocket server_socket = new ServerSocket(server_port);
+        System.out.println("server listening on port " + server_port);
+
+        while (true) {
+            try {
+                Socket sock = server_socket.accept();
+                //TODO: change this to run the request on a separate thread
+                handle_socket_request(sock);
+            } catch (IOException ignored) {
+            }
+        }
+    } catch (IOException e) {
+        System.out.println("error: unable to create server socket on port " + server_port);
+    }
+}
+
+}
+
