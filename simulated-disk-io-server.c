@@ -1,4 +1,4 @@
-// simulate occasional problematic (long blocking) requests within eventlet
+// simulate occasional problematic (long blocking) requests for disk IO
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,7 +49,7 @@ static const double MIN_TIME_FOR_NORMAL_IO = 0.075;
 static const double MAX_TIME_FOR_NORMAL_IO = 0.4;
 
 // maximum ADDITIONAL time above timeout experienced by requests that time out
-static double MAX_TIME_ABOVE_TIMEOUT; // = MAX_TIME_FOR_SLOW_IO * 0.8;
+static double MAX_TIME_ABOVE_TIMEOUT;
 
 
 double random_value() {
