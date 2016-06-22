@@ -1,4 +1,6 @@
 // simulate occasional problematic (long blocking) requests for disk IO
+// to build:
+//    gcc -Wall simulated-disk-io-server.c -o simulated-disk-io-server -lm
 
 #include <stdio.h>
 #include <stdlib.h>
