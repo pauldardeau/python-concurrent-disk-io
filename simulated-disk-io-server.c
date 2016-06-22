@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <time.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -65,8 +66,9 @@ double random_value_between(double min_value, double max_value) {
 }
 
 long current_time_millis() {
-    //TODO: implement current_time_millis
-    return 0L;
+    struct timespec spec;
+    clock_gettime(CLOCK_REALTIME, &spec);
+    return round(spec.tv_nsec / 1.0e6);
 }
 
 void simulated_file_read(const char* file_path,
