@@ -67,47 +67,42 @@ double random_value_between(double min_value, double max_value) {
     return rand_value;
 }
 
-long current_time_millis() {
-    struct timespec spec;
-    clock_gettime(CLOCK_REALTIME, &spec);
-    return round(spec.tv_nsec / 1.0e6);
-}
-
 void simulated_file_read(const char* file_path,
                          int read_timeout_secs,
                          ReadResponse* read_response) {
 
     const long read_timeout_ms = read_timeout_secs * 1000;
-    const long start_time_ms = current_time_millis();
-    int num_bytes_read = 0;
+    int num_bytes_read;
     const double rand_number = random_value();
     int request_with_slow_read = 0;
     int rc;
-    long elapsed_time_ms = 0L;
+    double min_response_time;
+    double max_response_time;
 
     if (rand_number <= PCT_IO_FAIL) {
         // simulate read io failure
         rc = STATUS_READ_IO_FAIL;
-        elapsed_time_ms =
-            (long) (1000.0 * random_value_between(MIN_TIME_FOR_IO_FAIL,
-                                                  MAX_TIME_FOR_IO_FAIL));
+        num_bytes_read = 0;
+        min_response_time = MIN_TIME_FOR_IO_FAIL;
+        max_response_time = MAX_TIME_FOR_IO_FAIL;
     } else {
         rc = STATUS_READ_SUCCESS;
+        num_bytes_read = (int) random_value_between(0, MAX_READ_BYTES);
         if (rand_number <= PCT_LONG_IO_RESPONSE_TIMES) {
             // simulate very slow request
             request_with_slow_read = 1;
-            elapsed_time_ms =
-                (long) (1000.0 * random_value_between(MIN_TIME_FOR_SLOW_IO,
-                                                      MAX_TIME_FOR_SLOW_IO));
+            min_response_time = MIN_TIME_FOR_SLOW_IO;
+            max_response_time = MAX_TIME_FOR_SLOW_IO;
         } else {
             // simulate typical read response time
-            elapsed_time_ms =
-                (long) (1000.0 * random_value_between(MIN_TIME_FOR_NORMAL_IO,
-                                                      MAX_TIME_FOR_NORMAL_IO));
+            min_response_time = MIN_TIME_FOR_NORMAL_IO;
+            max_response_time = MAX_TIME_FOR_NORMAL_IO;
         }
-        num_bytes_read = (int) random_value_between(0, MAX_READ_BYTES);
-        printf("num_bytes_read=%d\n", num_bytes_read);
     }
+
+    long elapsed_time_ms =
+        (long) (1000.0 * random_value_between(min_response_time,
+                                              max_response_time));
 
     if (elapsed_time_ms > read_timeout_ms && !request_with_slow_read) {
         rc = STATUS_READ_TIMEOUT;
@@ -116,9 +111,8 @@ void simulated_file_read(const char* file_path,
         num_bytes_read = 0;
     }
 
+    // ***********  simulate the disk read  ***********
     usleep(elapsed_time_ms * 1000);  // microseconds
-
-    const long end_time_ms = current_time_millis();
 
     if (rc == STATUS_READ_TIMEOUT) {
         printf("timeout (assigned)\n");
@@ -127,14 +121,12 @@ void simulated_file_read(const char* file_path,
     } else if (rc == STATUS_READ_SUCCESS) {
         // what would otherwise have been a successful read turns into a
         // timeout error if simulated execution time exceeds timeout value
-        const long exec_time_ms = end_time_ms - start_time_ms;
-        if (exec_time_ms > read_timeout_ms) {
+        if (elapsed_time_ms > read_timeout_ms) {
             //TODO: it would be nice to increment a counter here and show
             // the counter value as part of print
             printf("timeout (service)\n");
             rc = STATUS_READ_TIMEOUT;
             num_bytes_read = 0;
-            elapsed_time_ms = exec_time_ms;
         }
     }
 
@@ -159,8 +151,10 @@ void handle_socket_request(int sock) {
             }
 
             memset(&read_resp, 0, sizeof(read_resp));
-            
+
+            // *********  perform simulated read of disk file  *********            
             simulated_file_read(file_path, READ_TIMEOUT_SECS, &read_resp);
+
             snprintf(read_resp_text, 255, "%d,%d,%ld,%s\n",
                      read_resp.rc,
                      read_resp.bytes_read,
