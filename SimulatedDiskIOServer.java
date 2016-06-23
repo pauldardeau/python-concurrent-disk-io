@@ -1,4 +1,4 @@
-// simulate occasional problematic (long blocking) requests within eventlet
+// simulate occasional problematic (long blocking) requests for disk IO
 
 import java.net.*;
 import java.io.*;
