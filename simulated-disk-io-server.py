@@ -48,7 +48,6 @@ def random_value_between(min_value,max_value):
 
 
 def simulated_file_read(file_path, read_timeout):
-    start_time = time.time()
     num_bytes_read = 0
     rand_number = random.random()
     request_with_slow_read = False
@@ -75,8 +74,6 @@ def simulated_file_read(file_path, read_timeout):
 
     time.sleep(elapsed_time)
 
-    end_time = time.time()
-
     if rc == STATUS_READ_TIMEOUT:
         print("timeout (assigned)")
     elif rc == STATUS_READ_IO_FAIL:
@@ -84,14 +81,12 @@ def simulated_file_read(file_path, read_timeout):
     elif rc == STATUS_READ_SUCCESS:
         # what would otherwise have been a successful read turns into a
         # timeout error if simulated execution time exceeds timeout value
-        exec_time = end_time - start_time
-        if exec_time > read_timeout:
+        if elapsed_time > read_timeout:
             #TODO: it would be nice to increment a counter here and show
             # the counter value as part of print
             print("timeout (service)")
             rc = STATUS_READ_TIMEOUT
             num_bytes_read = 0
-            elapsed_time = exec_time
 
     return (rc, num_bytes_read, elapsed_time)
 
