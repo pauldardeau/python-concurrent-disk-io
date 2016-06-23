@@ -1,12 +1,13 @@
 // simulate occasional problematic (long blocking) requests for disk IO
 // to build:
-//    gcc -Wall simulated-disk-io-server.c -o simulated-disk-io-server -lm
+//    gcc -Wall simulated-disk-io-server.c -o simulated-disk-io-server -lm -lpthread
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -68,6 +69,7 @@ double random_value_between(double min_value, double max_value) {
 }
 
 void simulated_file_read(const char* file_path,
+                         long elapsed_time_ms, 
                          int read_timeout_secs,
                          ReadResponse* read_response) {
 
@@ -100,15 +102,19 @@ void simulated_file_read(const char* file_path,
         }
     }
 
-    long elapsed_time_ms =
-        (long) (1000.0 * random_value_between(min_response_time,
-                                              max_response_time));
-
-    if (elapsed_time_ms > read_timeout_ms && !request_with_slow_read) {
-        rc = STATUS_READ_TIMEOUT;
+    // do we need to generate the response time? (i.e., not predetermined)
+    if (-1L == elapsed_time_ms) {
         elapsed_time_ms =
-            (long) (1000.0 * random_value_between(0, MAX_TIME_ABOVE_TIMEOUT));
-        num_bytes_read = 0;
+            (long) (1000.0 * random_value_between(min_response_time,
+                                                  max_response_time));
+
+        if (elapsed_time_ms > read_timeout_ms && !request_with_slow_read) {
+            rc = STATUS_READ_TIMEOUT;
+            elapsed_time_ms =
+                (long) (1000.0 * random_value_between(0,
+                                                      MAX_TIME_ABOVE_TIMEOUT));
+            num_bytes_read = 0;
+        }
     }
 
     // ***********  simulate the disk read  ***********
@@ -138,32 +144,75 @@ void simulated_file_read(const char* file_path,
 
 void handle_socket_request(int sock) {
     ReadResponse read_resp;
-    char file_path[256];
-    char read_resp_text[256];
+    char request_text[256];
+    const char* file_path;
+    char response_text[256];
 
-    memset(file_path, 0, 256);
-    const int rc = read(sock, file_path, 256);
+    memset(request_text, 0, 256);
+
+    // read request from client
+    const int rc = read(sock, request_text, 256);
+
+    // read from socket succeeded?
     if (rc > 0) {
-        const int len_file_path = strlen(file_path);
-        if (len_file_path > 0) {
-            if (file_path[len_file_path-1] == '\n') {
-                file_path[len_file_path-1] = '\0';
+        const int len_req_payload = strlen(request_text);
+        // did we get anything from client?
+        if (len_req_payload > 0) {
+            // discard the newline from request text
+            if (request_text[len_req_payload-1] == '\n') {
+                request_text[len_req_payload-1] = '\0';
+            }
+
+            // unless otherwise specified, let server generate
+            // the response time
+            int predetermined_response_time_ms = -1;
+
+            // look for field delimiter in request
+            const char* field_delimiter = strchr(request_text, ',');
+            if (field_delimiter != NULL) {
+                file_path = field_delimiter + 1;
+                const int num_digits = field_delimiter - request_text;
+                if (num_digits > 0 && num_digits < 10) {
+                    char req_time_digits[10];
+                    memset(req_time_digits, 0, sizeof(req_time_digits));
+                    strncpy(req_time_digits, request_text, num_digits);
+                    const long req_response_time_ms = atol(req_time_digits);
+                    if (req_response_time_ms > 0) {
+                        predetermined_response_time_ms = req_response_time_ms;
+                    }
+                }
+            } else {
+                file_path = request_text;
             }
 
             memset(&read_resp, 0, sizeof(read_resp));
 
             // *********  perform simulated read of disk file  *********            
-            simulated_file_read(file_path, READ_TIMEOUT_SECS, &read_resp);
+            simulated_file_read(file_path,
+                                predetermined_response_time_ms,
+                                READ_TIMEOUT_SECS,
+                                &read_resp);
 
-            snprintf(read_resp_text, 255, "%d,%d,%ld,%s\n",
+            // create response text
+            snprintf(response_text, 255, "%d,%d,%ld,%s\n",
                      read_resp.rc,
                      read_resp.bytes_read,
                      read_resp.elapsed_time_ms,
                      read_resp.file_path);
-            write(sock, read_resp_text, strlen(read_resp_text));
+
+            // return response text to client
+            write(sock, response_text, strlen(response_text));
         }
     }
+
+    // close client socket connection
     close(sock);
+}
+
+void* thread_handle_socket_request(void* thread_arg) {
+    const int sock = (int) thread_arg;
+    handle_socket_request(sock);
+    return NULL;
 }
 
 int main(int argc, char* argv[]) {
@@ -202,12 +251,19 @@ int main(int argc, char* argv[]) {
     srand(time(NULL));
 
     while (1) {
+        // wait for next socket connection from a client
         sock = accept(server_socket,
                       (struct sockaddr *) &cli_addr,
                       &cli_addr_len);
         if (sock > -1) {
-            //TODO: change this to run the request on a separate thread
-            handle_socket_request(sock);
+            // create a new thread. for something real, a thread
+            // pool would be used, but creating a new thread for
+            // each request should be fine for our purposes.
+            pthread_t worker_thread;
+            pthread_create(&worker_thread,
+                           NULL,
+                           thread_handle_socket_request,
+                           (void*)sock);
         }
     }
     return 0;
