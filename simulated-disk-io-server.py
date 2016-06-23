@@ -8,7 +8,7 @@ import time
 
 NUM_GREEN_THREADS = 5
 
-READ_TIMEOUT = 4
+READ_TIMEOUT_SECS = 4
 
 # status codes to indicate whether read succeeded, timed out, or failed
 STATUS_READ_SUCCESS = 0
@@ -40,14 +40,14 @@ MAX_TIME_FOR_NORMAL_IO = 0.4
 MAX_TIME_ABOVE_TIMEOUT = MAX_TIME_FOR_SLOW_IO * 0.8
 
 
-def random_value_between(min_value,max_value):
+def random_value_between(min_value, max_value):
     rand_value = random.random() * max_value
     if rand_value < min_value:
         rand_value = min_value
     return rand_value
 
 
-def simulated_file_read(file_path, read_timeout):
+def simulated_file_read(file_path, read_timeout_secs):
     num_bytes_read = 0
     rand_number = random.random()
     request_with_slow_read = False
@@ -55,24 +55,29 @@ def simulated_file_read(file_path, read_timeout):
     if rand_number <= PCT_IO_FAIL:
         # simulate read io failure
         rc = STATUS_READ_IO_FAIL
-        elapsed_time = random_value_between(MIN_TIME_FOR_IO_FAIL, MAX_TIME_FOR_IO_FAIL)
+        min_response_time = MIN_TIME_FOR_IO_FAIL
+        max_response_time = MAX_TIME_FOR_IO_FAIL
     else:
         rc = STATUS_READ_SUCCESS
         if rand_number <= PCT_LONG_IO_RESPONSE_TIMES:
             # simulate very slow request
             request_with_slow_read = True
-            elapsed_time = random_value_between(MIN_TIME_FOR_SLOW_IO, MAX_TIME_FOR_SLOW_IO)
+            min_response_time = MIN_TIME_FOR_SLOW_IO
+            max_response_time = MAX_TIME_FOR_SLOW_IO
         else:
             # simulate typical read response time
-            elapsed_time = random_value_between(MIN_TIME_FOR_NORMAL_IO, MAX_TIME_FOR_NORMAL_IO)
+            min_response_time = MIN_TIME_FOR_NORMAL_IO
+            max_response_time = MAX_TIME_FOR_NORMAL_IO
         num_bytes_read = int(random.random() * MAX_READ_BYTES)
 
-    if elapsed_time > read_timeout and not request_with_slow_read:
+    elapsed_time_secs = random_value_between(min_response_time, max_response_time)
+
+    if elapsed_time_secs > read_timeout_secs and not request_with_slow_read:
         rc = STATUS_READ_TIMEOUT
-        elapsed_time = random_value_between(0, MAX_TIME_ABOVE_TIMEOUT)
+        elapsed_time_secs = random_value_between(0, MAX_TIME_ABOVE_TIMEOUT)
         num_bytes_read = 0
 
-    time.sleep(elapsed_time)
+    time.sleep(elapsed_time_secs)
 
     if rc == STATUS_READ_TIMEOUT:
         print("timeout (assigned)")
@@ -81,14 +86,14 @@ def simulated_file_read(file_path, read_timeout):
     elif rc == STATUS_READ_SUCCESS:
         # what would otherwise have been a successful read turns into a
         # timeout error if simulated execution time exceeds timeout value
-        if elapsed_time > read_timeout:
+        if elapsed_time_secs > read_timeout_secs:
             #TODO: it would be nice to increment a counter here and show
             # the counter value as part of print
             print("timeout (service)")
             rc = STATUS_READ_TIMEOUT
             num_bytes_read = 0
 
-    return (rc, num_bytes_read, elapsed_time)
+    return (rc, num_bytes_read, elapsed_time_secs)
 
 
 def handle_socket_request(sock):
@@ -96,7 +101,7 @@ def handle_socket_request(sock):
     writer = sock.makefile('w')
     file_path = reader.readline()
     if file_path:
-        read_resp = simulated_file_read(file_path, READ_TIMEOUT)
+        read_resp = simulated_file_read(file_path, READ_TIMEOUT_SECS)
         read_resp_text = "%d,%d,%f,%s" % (read_resp[0], read_resp[1], read_resp[2], file_path)
         writer.write(read_resp_text+'\n')
         writer.flush()
