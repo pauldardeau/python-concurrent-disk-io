@@ -226,9 +226,15 @@ public static void main(String[] args) {
 
         while (true) {
             try {
-                Socket sock = server_socket.accept();
-                //TODO: change this to run the request on a separate thread
-                handle_socket_request(sock);
+                final Socket sock = server_socket.accept();
+                if (sock != null) {
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            handle_socket_request(sock);
+                        }
+                    }).start();
+                }
             } catch (IOException ignored) {
             }
         }
