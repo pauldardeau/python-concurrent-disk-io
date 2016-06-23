@@ -11,9 +11,9 @@ NUM_GREEN_THREADS = 5
 READ_TIMEOUT = 4
 
 # status codes to indicate whether read succeeded, timed out, or failed
-READ_SUCCESS = 0
-READ_TIMEOUT = 1
-READ_IO_FAIL = 2
+STATUS_READ_SUCCESS = 0
+STATUS_READ_TIMEOUT = 1
+STATUS_READ_IO_FAIL = 2
 
 # percentage of requests that result in very long response times (many seconds)
 PCT_LONG_IO_RESPONSE_TIMES = 0.10
@@ -55,10 +55,10 @@ def simulated_file_read(file_path, read_timeout):
 
     if rand_number <= PCT_IO_FAIL:
         # simulate read io failure
-        rc = READ_IO_FAIL
+        rc = STATUS_READ_IO_FAIL
         elapsed_time = random_value_between(MIN_TIME_FOR_IO_FAIL, MAX_TIME_FOR_IO_FAIL)
     else:
-        rc = READ_SUCCESS
+        rc = STATUS_READ_SUCCESS
         if rand_number <= PCT_LONG_IO_RESPONSE_TIMES:
             # simulate very slow request
             request_with_slow_read = True
@@ -69,7 +69,7 @@ def simulated_file_read(file_path, read_timeout):
         num_bytes_read = int(random.random() * MAX_READ_BYTES)
 
     if elapsed_time > read_timeout and not request_with_slow_read:
-        rc = READ_TIMEOUT
+        rc = STATUS_READ_TIMEOUT
         elapsed_time = random_value_between(0, MAX_TIME_ABOVE_TIMEOUT)
         num_bytes_read = 0
 
@@ -77,11 +77,11 @@ def simulated_file_read(file_path, read_timeout):
 
     end_time = time.time()
 
-    if rc == READ_TIMEOUT:
+    if rc == STATUS_READ_TIMEOUT:
         print("timeout (assigned)")
-    elif rc == READ_IO_FAIL:
+    elif rc == STATUS_READ_IO_FAIL:
         print("io fail")
-    elif rc == READ_SUCCESS:
+    elif rc == STATUS_READ_SUCCESS:
         # what would otherwise have been a successful read turns into a
         # timeout error if simulated execution time exceeds timeout value
         exec_time = end_time - start_time
@@ -89,7 +89,7 @@ def simulated_file_read(file_path, read_timeout):
             #TODO: it would be nice to increment a counter here and show
             # the counter value as part of print
             print("timeout (service)")
-            rc = READ_TIMEOUT
+            rc = STATUS_READ_TIMEOUT
             num_bytes_read = 0
             elapsed_time = exec_time
 
