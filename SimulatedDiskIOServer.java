@@ -8,30 +8,30 @@ import java.util.*;
 class ReadResponse {
     public int rc;
     public int bytes_read;
-    public double elapsed_time;
+    public long elapsed_time_ms;
     public String file_path;
 
-    public ReadResponse(int rc, int bytes_read, double elapsed_time) {
+    public ReadResponse(int rc,
+                        int bytes_read,
+                        long elapsed_time_ms,
+                        String file_path) {
         this.rc = rc;
         this.bytes_read = bytes_read;
-        this.elapsed_time = elapsed_time;
+        this.elapsed_time_ms = elapsed_time_ms;
+        this.file_path = file_path;
     }
 
     public String toString() {
-        String s = "" + rc + "," + bytes_read + "," + elapsed_time + ",";
-        if (file_path != null) {
-            s = s + file_path;
-        }
-        return s;
+        return "" + rc + "," + bytes_read + "," + elapsed_time_ms + "," + file_path;
     }
 }
 
 
 public class SimulatedDiskIOServer {
 
-public static int NUM_GREEN_THREADS = 5;
+public static int NUM_WORKER_THREADS = 5;
 
-public static int READ_TIMEOUT = 4;
+public static int READ_TIMEOUT_SECS = 4;
 
 // status codes to indicate whether read succeeded, timed out, or failed
 public static int STATUS_READ_SUCCESS = 0;
@@ -74,43 +74,57 @@ public static double random_value_between(double min_value, double max_value) {
 }
 
 
-public static ReadResponse simulated_file_read(String file_path, int read_timeout) {
-    long start_time = System.currentTimeMillis();
+public static ReadResponse simulated_file_read(String file_path,
+                                               long elapsed_time_ms,
+                                               int read_timeout_secs) {
+
+    final long read_timeout_ms = read_timeout_secs * 1000;
     int num_bytes_read = 0;
     double rand_number = randomGenerator.nextDouble();
     boolean request_with_slow_read = false;
     int rc;
-    long elapsed_time = 0;
+    double min_response_time;
+    double max_response_time;
 
     if (rand_number <= PCT_IO_FAIL) {
         // simulate read io failure
         rc = STATUS_READ_IO_FAIL;
-        elapsed_time = (long) (1000.0 * random_value_between(MIN_TIME_FOR_IO_FAIL, MAX_TIME_FOR_IO_FAIL));
+        min_response_time = MIN_TIME_FOR_IO_FAIL;
+        max_response_time = MAX_TIME_FOR_IO_FAIL;
     } else {
         rc = STATUS_READ_SUCCESS;
         if (rand_number <= PCT_LONG_IO_RESPONSE_TIMES) {
             // simulate very slow request
             request_with_slow_read = true;
-            elapsed_time = (long) (1000.0 * random_value_between(MIN_TIME_FOR_SLOW_IO, MAX_TIME_FOR_SLOW_IO));
+            min_response_time = MIN_TIME_FOR_SLOW_IO;
+            max_response_time = MAX_TIME_FOR_SLOW_IO;
         } else {
             // simulate typical read response time
-            elapsed_time = (long) (1000.0 * random_value_between(MIN_TIME_FOR_NORMAL_IO, MAX_TIME_FOR_NORMAL_IO));
+            min_response_time = MIN_TIME_FOR_NORMAL_IO;
+            max_response_time = MAX_TIME_FOR_NORMAL_IO;
         }
         num_bytes_read = (int) (randomGenerator.nextDouble() * MAX_READ_BYTES);
     }
 
-    if (elapsed_time > read_timeout && !request_with_slow_read) {
-        rc = STATUS_READ_TIMEOUT;
-        elapsed_time = (long) (1000.0 * random_value_between(0, MAX_TIME_ABOVE_TIMEOUT));
-        num_bytes_read = 0;
+    // do we need to generate the response time? (i.e., not predetermined)
+    if (-1 == elapsed_time_ms) {
+        elapsed_time_ms =
+            (long) (1000.0 * random_value_between(min_response_time,
+                                                  max_response_time));
+
+        if (elapsed_time_ms > read_timeout_ms && !request_with_slow_read) {
+            rc = STATUS_READ_TIMEOUT;
+            elapsed_time_ms =
+                (long) (1000.0 * random_value_between(0,
+                                                      MAX_TIME_ABOVE_TIMEOUT));
+            num_bytes_read = 0;
+        }
     }
 
     try {
-        Thread.sleep(elapsed_time);
+        Thread.sleep(elapsed_time_ms);
     } catch (InterruptedException ignored) {
     }
-
-    long end_time = System.currentTimeMillis();
 
     if (rc == STATUS_READ_TIMEOUT) {
         System.out.println("timeout (assigned)");
@@ -119,18 +133,16 @@ public static ReadResponse simulated_file_read(String file_path, int read_timeou
     } else if (rc == STATUS_READ_SUCCESS) {
         // what would otherwise have been a successful read turns into a
         // timeout error if simulated execution time exceeds timeout value
-        long exec_time = end_time - start_time;
-        if (exec_time > read_timeout) {
+        if (elapsed_time_ms > read_timeout_ms) {
             //TODO: it would be nice to increment a counter here and show
             // the counter value as part of print
             System.out.println("timeout (service)");
             rc = STATUS_READ_TIMEOUT;
             num_bytes_read = 0;
-            elapsed_time = exec_time;
         }
     }
 
-    return new ReadResponse(rc, num_bytes_read, elapsed_time);
+    return new ReadResponse(rc, num_bytes_read, elapsed_time_ms, file_path);
 }
 
 public static void handle_socket_request(Socket sock) {
@@ -139,9 +151,34 @@ public static void handle_socket_request(Socket sock) {
     try {
         reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
         writer = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
-        String file_path = reader.readLine();
-        if (file_path != null && file_path.length() > 0) {
-            ReadResponse read_resp = simulated_file_read(file_path, READ_TIMEOUT);
+        String request_text = reader.readLine();
+        if (request_text != null && request_text.length() > 0) {
+
+            // unless otherwise specified, let server generate
+            // the response time
+            long predetermined_response_time_ms = -1;
+            String file_path;
+
+            // look for field delimiter in request
+            int pos_field_delimiter = request_text.indexOf(",");
+            if (pos_field_delimiter > -1) {
+                file_path = request_text.substring(pos_field_delimiter + 1);
+                final int num_digits = pos_field_delimiter;
+                if ((num_digits > 0) && (num_digits < 10)) {
+                    String req_time_digits = request_text.substring(0, pos_field_delimiter);
+                    final long req_response_time_ms = Long.parseLong(req_time_digits);
+                    if (req_response_time_ms > 0) {
+                        predetermined_response_time_ms = req_response_time_ms;
+                    }
+                }
+            } else {
+                file_path = request_text;
+            }
+
+            ReadResponse read_resp =
+                simulated_file_read(file_path,
+                                    predetermined_response_time_ms,
+                                    READ_TIMEOUT_SECS);
             writer.write(read_resp.toString() + "\n");
             writer.flush();
         }
