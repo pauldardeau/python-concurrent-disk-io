@@ -121,6 +121,7 @@ public static ReadResponse simulated_file_read(String file_path,
         }
     }
 
+    // ***********  simulate the disk read  ***********
     try {
         Thread.sleep(elapsed_time_ms);
     } catch (InterruptedException ignored) {
@@ -148,11 +149,18 @@ public static ReadResponse simulated_file_read(String file_path,
 public static void handle_socket_request(Socket sock) {
     BufferedReader reader = null;
     BufferedWriter writer = null;
+
     try {
-        reader = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-        writer = new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
+        reader =
+            new BufferedReader(new InputStreamReader(sock.getInputStream()));
+        writer =
+            new BufferedWriter(new OutputStreamWriter(sock.getOutputStream()));
+
+        // read request from client
         String request_text = reader.readLine();
-        if (request_text != null && request_text.length() > 0) {
+
+        // did we get anything from client?
+        if ((request_text != null) && (request_text.length() > 0)) {
 
             // unless otherwise specified, let server generate
             // the response time
@@ -175,10 +183,13 @@ public static void handle_socket_request(Socket sock) {
                 file_path = request_text;
             }
 
+            // *********  perform simulated read of disk file  *********
             ReadResponse read_resp =
                 simulated_file_read(file_path,
                                     predetermined_response_time_ms,
                                     READ_TIMEOUT_SECS);
+
+            // return response text to client
             writer.write(read_resp.toString() + "\n");
             writer.flush();
         }
@@ -197,6 +208,8 @@ public static void handle_socket_request(Socket sock) {
             } catch (IOException ignored) {
             }
         }
+
+        // close client socket connection
         try {
             sock.close();
         } catch (IOException ignored) {
