@@ -55,10 +55,12 @@ def simulated_file_read(file_path, read_timeout_secs):
     if rand_number <= PCT_IO_FAIL:
         # simulate read io failure
         rc = STATUS_READ_IO_FAIL
+        num_bytes_read = 0
         min_response_time = MIN_TIME_FOR_IO_FAIL
         max_response_time = MAX_TIME_FOR_IO_FAIL
     else:
         rc = STATUS_READ_SUCCESS
+        num_bytes_read = int(random.random() * MAX_READ_BYTES)
         if rand_number <= PCT_LONG_IO_RESPONSE_TIMES:
             # simulate very slow request
             request_with_slow_read = True
@@ -68,7 +70,6 @@ def simulated_file_read(file_path, read_timeout_secs):
             # simulate typical read response time
             min_response_time = MIN_TIME_FOR_NORMAL_IO
             max_response_time = MAX_TIME_FOR_NORMAL_IO
-        num_bytes_read = int(random.random() * MAX_READ_BYTES)
 
     elapsed_time_secs = random_value_between(min_response_time, max_response_time)
 
