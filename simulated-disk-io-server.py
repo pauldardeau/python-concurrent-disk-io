@@ -47,7 +47,8 @@ def random_value_between(min_value, max_value):
     return rand_value
 
 
-def simulated_file_read(file_path, read_timeout_secs):
+def simulated_file_read(file_path, elapsed_time_ms, read_timeout_secs):
+    read_timeout_ms = read_timeout_secs * 1000
     num_bytes_read = 0
     rand_number = random.random()
     request_with_slow_read = False
@@ -71,14 +72,17 @@ def simulated_file_read(file_path, read_timeout_secs):
             min_response_time = MIN_TIME_FOR_NORMAL_IO
             max_response_time = MAX_TIME_FOR_NORMAL_IO
 
-    elapsed_time_secs = random_value_between(min_response_time, max_response_time)
+    # do we need to generate the response time? (i.e., not predetermined)
+    if -1L == elapsed_time_ms:
+        elapsed_time_ms = 1000.0 * random_value_between(min_response_time, max_response_time)
 
-    if elapsed_time_secs > read_timeout_secs and not request_with_slow_read:
-        rc = STATUS_READ_TIMEOUT
-        elapsed_time_secs = random_value_between(0, MAX_TIME_ABOVE_TIMEOUT)
-        num_bytes_read = 0
+        if elapsed_time_ms > read_timeout_ms and not request_with_slow_read:
+            rc = STATUS_READ_TIMEOUT
+            elapsed_time_ms = 1000.0 *random_value_between(0, MAX_TIME_ABOVE_TIMEOUT)
+            num_bytes_read = 0
 
-    time.sleep(elapsed_time_secs)
+    # ***********  simulate the disk read  ***********
+    time.sleep(elapsed_time_ms / 1000.0)  # seconds
 
     if rc == STATUS_READ_TIMEOUT:
         print("timeout (assigned)")
@@ -87,23 +91,40 @@ def simulated_file_read(file_path, read_timeout_secs):
     elif rc == STATUS_READ_SUCCESS:
         # what would otherwise have been a successful read turns into a
         # timeout error if simulated execution time exceeds timeout value
-        if elapsed_time_secs > read_timeout_secs:
+        if elapsed_time_ms > read_timeout_ms:
             #TODO: it would be nice to increment a counter here and show
             # the counter value as part of print
             print("timeout (service)")
             rc = STATUS_READ_TIMEOUT
             num_bytes_read = 0
 
-    return (rc, num_bytes_read, elapsed_time_secs)
+    return (rc, num_bytes_read, elapsed_time_ms)
 
 
 def handle_socket_request(sock):
     reader = sock.makefile('r')
     writer = sock.makefile('w')
-    file_path = reader.readline()
-    if file_path:
-        read_resp = simulated_file_read(file_path, READ_TIMEOUT_SECS)
-        read_resp_text = "%d,%d,%f,%s" % (read_resp[0], read_resp[1], read_resp[2], file_path)
+    request_text = reader.readline()
+    if request_text:
+        # unless otherwise specified, let server generate
+        # the response time
+        predetermined_response_time_ms = -1
+
+        # look for field delimiter in request
+        pos_field_delimiter = request_text.find(',')
+        if pos_field_delimiter > -1:
+            file_path = request_text[pos_field_delimiter + 1:]
+            num_digits = pos_field_delimiter
+            if (num_digits > 0) and (num_digits < 10):
+                req_time_digits = request_text[0:pos_field_delimiter]
+                req_response_time_ms = long(req_time_digits)
+                if req_response_time_ms > 0:
+                    predetermined_response_time_ms = req_response_time_ms
+        else:
+            file_path = request_text
+
+        read_resp = simulated_file_read(file_path, predetermined_response_time_ms, READ_TIMEOUT_SECS)
+        read_resp_text = "%d,%d,%d,%s" % (read_resp[0], read_resp[1], read_resp[2], file_path)
         writer.write(read_resp_text+'\n')
         writer.flush()
     reader.close()
