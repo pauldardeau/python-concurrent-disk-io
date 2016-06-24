@@ -2,7 +2,7 @@
 
 import eventlet
 from eventlet.green import socket
-import random
+import string
 import time
 
 
@@ -10,97 +10,13 @@ NUM_GREEN_THREADS = 5
 
 READ_TIMEOUT_SECS = 4
 
-STATUS_READ_SUCCESS  = 0
-STATUS_READ_TIMEOUT  = 1
-STATUS_READ_IO_FAIL  = 2
-STATUS_QUEUE_TIMEOUT = 3
-
-# percentage of requests that result in very long response times (many seconds)
-PCT_LONG_IO_RESPONSE_TIMES = 0.10
-
-# percentage of requests that result in IO failure
-PCT_IO_FAIL = 0.001
-
-# max size that would be read
-MAX_READ_BYTES = 100000
-
-# min/max values for io failure
-MIN_TIME_FOR_IO_FAIL = 0.3
-MAX_TIME_FOR_IO_FAIL = 3.0
-
-# min/max values for slow read (dying disk)
-MIN_TIME_FOR_SLOW_IO = 6.0
-MAX_TIME_FOR_SLOW_IO = 20.0
-
-# min/max values for normal io
-MIN_TIME_FOR_NORMAL_IO = 0.075
-MAX_TIME_FOR_NORMAL_IO = 0.4
-
-# maximum ADDITIONAL time above timeout experienced by requests that time out
-MAX_TIME_ABOVE_TIMEOUT = MAX_TIME_FOR_SLOW_IO * 0.8
+STATUS_OK = 0
+STATUS_QUEUE_TIMEOUT = 1
+STATUS_BAD_INPUT = 2
 
 
-def random_value_between(min_value, max_value):
-    rand_value = random.random() * max_value
-    if rand_value < min_value:
-        rand_value = min_value
-    return rand_value
-
-
-def simulated_file_read(file_path, elapsed_time_ms, read_timeout_secs):
-    read_timeout_ms = read_timeout_secs * 1000
-    num_bytes_read = 0
-    rand_number = random.random()
-    request_with_slow_read = False
-
-    if rand_number <= PCT_IO_FAIL:
-        # simulate read io failure
-        rc = STATUS_READ_IO_FAIL
-        num_bytes_read = 0
-        min_response_time = MIN_TIME_FOR_IO_FAIL
-        max_response_time = MAX_TIME_FOR_IO_FAIL
-    else:
-        rc = STATUS_READ_SUCCESS
-        num_bytes_read = int(random.random() * MAX_READ_BYTES)
-        if rand_number <= PCT_LONG_IO_RESPONSE_TIMES:
-            # simulate very slow request
-            request_with_slow_read = True
-            min_response_time = MIN_TIME_FOR_SLOW_IO
-            max_response_time = MAX_TIME_FOR_SLOW_IO
-        else:
-            # simulate typical read response time
-            min_response_time = MIN_TIME_FOR_NORMAL_IO
-            max_response_time = MAX_TIME_FOR_NORMAL_IO
-
-    # do we need to generate the response time? (i.e., not predetermined)
-    if -1L == elapsed_time_ms:
-        elapsed_time_ms = 1000.0 * random_value_between(min_response_time,
-                                                        max_response_time)
-
-        if elapsed_time_ms > read_timeout_ms and not request_with_slow_read:
-            rc = STATUS_READ_TIMEOUT
-            elapsed_time_ms = 1000.0 * random_value_between(0,
-                                                            MAX_TIME_ABOVE_TIMEOUT)
-            num_bytes_read = 0
-
-    # ***********  simulate the disk read  ***********
+def simulated_file_read(elapsed_time_ms):
     time.sleep(elapsed_time_ms / 1000.0)  # seconds
-
-    if rc == STATUS_READ_TIMEOUT:
-        print("timeout (assigned)")
-    elif rc == STATUS_READ_IO_FAIL:
-        print("io fail")
-    elif rc == STATUS_READ_SUCCESS:
-        # what would otherwise have been a successful read turns into a
-        # timeout error if simulated execution time exceeds timeout value
-        if elapsed_time_ms > read_timeout_ms:
-            #TODO: it would be nice to increment a counter here and show
-            # the counter value as part of print
-            print("timeout (service)")
-            rc = STATUS_READ_TIMEOUT
-            num_bytes_read = 0
-
-    return (rc, num_bytes_read, elapsed_time_ms)
 
 
 def handle_socket_request(sock, receipt_timestamp):
@@ -108,46 +24,35 @@ def handle_socket_request(sock, receipt_timestamp):
     writer = sock.makefile('w')
     request_text = reader.readline()
     if request_text:
-        # determine how long the request has waited in queue
         start_processing_timestamp = time.time()
         queue_time_ms = start_processing_timestamp - receipt_timestamp
         queue_time_secs = queue_time_ms / 1000
 
-        # unless otherwise specified, let server generate
-        # the response time
-        predetermined_response_time_ms = -1
-
-        # look for field delimiter in request
-        pos_field_delimiter = request_text.find(',')
-        if pos_field_delimiter > -1:
-            file_path = request_text[pos_field_delimiter + 1:]
-            num_digits = pos_field_delimiter
-            if (num_digits > 0) and (num_digits < 10):
-                req_time_digits = request_text[0:pos_field_delimiter]
-                req_response_time_ms = long(req_time_digits)
-                if req_response_time_ms > 0:
-                    predetermined_response_time_ms = req_response_time_ms
-        else:
-            file_path = request_text
+        rc = STATUS_OK
+        disk_read_time_ms = 0
+        file_path = ''
 
         # has this request already timed out?
         if queue_time_secs >= READ_TIMEOUT_SECS:
             print("timeout (queue)")
             rc = STATUS_QUEUE_TIMEOUT
-            num_bytes_read = 0
-            disk_read_time_ms = 0
-            read_resp = (rc, num_bytes_read, disk_read_time_ms)
         else:
-            read_resp = simulated_file_read(file_path,
-                                            predetermined_response_time_ms,
-                                            READ_TIMEOUT_SECS)
+            fields = string.split(request_text, ',')
+            if len(fields) == 3:
+                rc = int(fields[0])
+                disk_read_time_ms = long(fields[1])
+                file_path = fields[2]
+                simulated_file_read(disk_read_time_ms)
+            else:
+                rc = STATUS_BAD_INPUT
 
         # total request time is sum of time spent in queue and the
         # simulated disk read time
-        tot_request_time_ms = queue_time_ms + read_resp[2]
+        tot_request_time_ms = queue_time_ms + disk_read_time_ms
 
-        read_resp_text = "%d,%d,%d,%s" % \
-            (read_resp[0], read_resp[1], tot_request_time_ms, file_path)
+        # construct response and send back to client
+        read_resp_text = "%d,%d,%s" % \
+            (rc, tot_request_time_ms, file_path)
         writer.write(read_resp_text)
         writer.flush()
     reader.close()
@@ -161,13 +66,16 @@ def main(server_port):
     server_socket.listen(100)
     print("server listening on port %d" % server_port)
 
-    while True:
-        sock, addr = server_socket.accept()
-        receipt_timestamp = time.time()
-        eventlet.spawn(handle_socket_request, sock, receipt_timestamp)
+    try:
+        while True:
+            sock, addr = server_socket.accept()
+            receipt_timestamp = time.time()
+            eventlet.spawn(handle_socket_request, sock, receipt_timestamp)
+    except KeyboardInterrupt:
+        pass  # exit
 
 
 if __name__=='__main__':
-    server_port = 6000
+    server_port = 7000
     main(server_port)
 
