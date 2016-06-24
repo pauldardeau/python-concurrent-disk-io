@@ -17,6 +17,7 @@
 typedef struct _ThreadRequest {
     int client_socket;
     long receipt_timestamp;
+    pthread_t thread;
 } ThreadRequest;
 
 typedef struct _ReadResponse {
@@ -239,6 +240,7 @@ void handle_socket_request(ThreadRequest* thread_request) {
 
     // close client socket connection
     close(thread_request->client_socket);
+    free(thread_request);
 }
 
 void* thread_handle_socket_request(void* thread_arg) {
@@ -290,14 +292,13 @@ int main(int argc, char* argv[]) {
             // create a new thread. for something real, a thread
             // pool would be used, but creating a new thread for
             // each request should be fine for our purposes.
-            ThreadRequest thread_request;
-            thread_request.receipt_timestamp = current_time_millis();
-            thread_request.client_socket = sock;
-            pthread_t worker_thread;
-            pthread_create(&worker_thread,
+            ThreadRequest* thread_request = malloc(sizeof(ThreadRequest));
+            thread_request->receipt_timestamp = current_time_millis();
+            thread_request->client_socket = sock;
+            pthread_create(&thread_request->thread,
                            NULL,
                            thread_handle_socket_request,
-                           (void*)&thread_request);
+                           (void*)thread_request);
         }
     }
     return 0;
