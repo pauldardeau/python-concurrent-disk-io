@@ -21,6 +21,10 @@ class ReadResponse {
         this.file_path = file_path;
     }
 
+    public void addQueueTime(long queue_time_ms) {
+        this.elapsed_time_ms += queue_time_ms;
+    }
+
     public String toString() {
         return "" + rc + "," + bytes_read + "," + elapsed_time_ms + "," + file_path;
     }
@@ -33,10 +37,10 @@ public static int NUM_WORKER_THREADS = 5;
 
 public static int READ_TIMEOUT_SECS = 4;
 
-// status codes to indicate whether read succeeded, timed out, or failed
-public static int STATUS_READ_SUCCESS = 0;
-public static int STATUS_READ_TIMEOUT = 1;
-public static int STATUS_READ_IO_FAIL = 2;
+public static int STATUS_READ_SUCCESS  = 0;
+public static int STATUS_READ_TIMEOUT  = 1;
+public static int STATUS_READ_IO_FAIL  = 2;
+public static int STATUS_QUEUE_TIMEOUT = 3;
 
 // percentage of requests that result in very long response times (many seconds)
 public static double PCT_LONG_IO_RESPONSE_TIMES = 0.10;
@@ -146,7 +150,8 @@ public static ReadResponse simulated_file_read(String file_path,
     return new ReadResponse(rc, num_bytes_read, elapsed_time_ms, file_path);
 }
 
-public static void handle_socket_request(Socket sock) {
+public static void handle_socket_request(Socket sock,
+                                         long receipt_timestamp) {
     BufferedReader reader = null;
     BufferedWriter writer = null;
 
@@ -161,6 +166,11 @@ public static void handle_socket_request(Socket sock) {
 
         // did we get anything from client?
         if ((request_text != null) && (request_text.length() > 0)) {
+            // determine how long the request has waited in queue
+            final long start_processing_timestamp = System.currentTimeMillis();
+            final long queue_time_ms = start_processing_timestamp -
+                receipt_timestamp;
+            final int queue_time_secs = (int) (queue_time_ms / 1000);
 
             // unless otherwise specified, let server generate
             // the response time
@@ -183,11 +193,26 @@ public static void handle_socket_request(Socket sock) {
                 file_path = request_text;
             }
 
-            // *********  perform simulated read of disk file  *********
-            ReadResponse read_resp =
-                simulated_file_read(file_path,
-                                    predetermined_response_time_ms,
-                                    READ_TIMEOUT_SECS);
+            ReadResponse read_resp;
+
+            // has this request already timed out?
+            if (queue_time_secs >= READ_TIMEOUT_SECS) {
+                System.out.println("timeout (queue)");
+                read_resp = new ReadResponse(STATUS_QUEUE_TIMEOUT,
+                                             0,  // bytes read
+                                             0,  // elapsed time ms
+                                             file_path);
+            } else {
+                // *********  perform simulated read of disk file  *********
+                read_resp =
+                    simulated_file_read(file_path,
+                                        predetermined_response_time_ms,
+                                        READ_TIMEOUT_SECS);
+            }
+
+            // total request time is sum of time spent in queue and the
+            // simulated disk read time
+            read_resp.addQueueTime(queue_time_ms);
 
             // return response text to client
             writer.write(read_resp.toString() + "\n");
@@ -228,10 +253,11 @@ public static void main(String[] args) {
             try {
                 final Socket sock = server_socket.accept();
                 if (sock != null) {
+                    final long receipt_timestamp = System.currentTimeMillis();
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            handle_socket_request(sock);
+                            handle_socket_request(sock, receipt_timestamp);
                         }
                     }).start();
                 }
