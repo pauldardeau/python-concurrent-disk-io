@@ -10,10 +10,10 @@ NUM_GREEN_THREADS = 5
 
 READ_TIMEOUT_SECS = 4
 
-# status codes to indicate whether read succeeded, timed out, or failed
-STATUS_READ_SUCCESS = 0
-STATUS_READ_TIMEOUT = 1
-STATUS_READ_IO_FAIL = 2
+STATUS_READ_SUCCESS  = 0
+STATUS_READ_TIMEOUT  = 1
+STATUS_READ_IO_FAIL  = 2
+STATUS_QUEUE_TIMEOUT = 3
 
 # percentage of requests that result in very long response times (many seconds)
 PCT_LONG_IO_RESPONSE_TIMES = 0.10
@@ -101,11 +101,16 @@ def simulated_file_read(file_path, elapsed_time_ms, read_timeout_secs):
     return (rc, num_bytes_read, elapsed_time_ms)
 
 
-def handle_socket_request(sock):
+def handle_socket_request(sock, receipt_timestamp):
     reader = sock.makefile('r')
     writer = sock.makefile('w')
     request_text = reader.readline()
     if request_text:
+        # determine how long the request has waited in queue
+        start_processing_timestamp = time.time()
+        queue_time_ms = start_processing_timestamp - receipt_timestamp
+        queue_time_secs = queue_time_ms * 1000
+
         # unless otherwise specified, let server generate
         # the response time
         predetermined_response_time_ms = -1
@@ -123,9 +128,25 @@ def handle_socket_request(sock):
         else:
             file_path = request_text
 
-        read_resp = simulated_file_read(file_path, predetermined_response_time_ms, READ_TIMEOUT_SECS)
-        read_resp_text = "%d,%d,%d,%s" % (read_resp[0], read_resp[1], read_resp[2], file_path)
-        writer.write(read_resp_text+'\n')
+        # has this request already timed out?
+        if queue_time_secs >= READ_TIMEOUT_SECS:
+            print("timeout (queue)")
+            rc = STATUS_QUEUE_TIMEOUT
+            num_bytes_read = 0
+            disk_read_time_ms = 0
+            read_resp = (rc, num_bytes_read, disk_read_time_ms)
+        else:
+            read_resp = simulated_file_read(file_path,
+                                            predetermined_response_time_ms,
+                                            READ_TIMEOUT_SECS)
+
+        # total request time is sum of time spent in queue and the
+        # simulated disk read time
+        tot_request_time_ms = queue_time_ms + read_resp[2]
+
+        read_resp_text = "%d,%d,%d,%s" % \
+            (read_resp[0], read_resp[1], tot_request_time_ms, file_path)
+        writer.write(read_resp_text)
         writer.flush()
     reader.close()
     writer.close()
@@ -140,7 +161,8 @@ def main(server_port):
 
     while True:
         sock, addr = server_socket.accept()
-        eventlet.spawn(handle_socket_request, sock)
+        receipt_timestamp = time.time()
+        eventlet.spawn(handle_socket_request, sock, receipt_timestamp)
 
 
 if __name__=='__main__':
