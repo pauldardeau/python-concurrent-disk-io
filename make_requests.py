@@ -6,7 +6,7 @@ import time
 def main(timeout_secs, server_port, iteration_count, file_name):
     for i in range(iteration_count):
         start_time_secs = time.time()
-        cmd = 'nc localhost %d < file_list_with_time.txt' % server_port
+        cmd = 'nc localhost %d < file_list.txt' % server_port
         rc = os.system(cmd)
         if rc != 0:
             sys.exit(1)
