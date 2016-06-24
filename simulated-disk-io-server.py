@@ -74,11 +74,13 @@ def simulated_file_read(file_path, elapsed_time_ms, read_timeout_secs):
 
     # do we need to generate the response time? (i.e., not predetermined)
     if -1L == elapsed_time_ms:
-        elapsed_time_ms = 1000.0 * random_value_between(min_response_time, max_response_time)
+        elapsed_time_ms = 1000.0 * random_value_between(min_response_time,
+                                                        max_response_time)
 
         if elapsed_time_ms > read_timeout_ms and not request_with_slow_read:
             rc = STATUS_READ_TIMEOUT
-            elapsed_time_ms = 1000.0 *random_value_between(0, MAX_TIME_ABOVE_TIMEOUT)
+            elapsed_time_ms = 1000.0 * random_value_between(0,
+                                                            MAX_TIME_ABOVE_TIMEOUT)
             num_bytes_read = 0
 
     # ***********  simulate the disk read  ***********
@@ -109,7 +111,7 @@ def handle_socket_request(sock, receipt_timestamp):
         # determine how long the request has waited in queue
         start_processing_timestamp = time.time()
         queue_time_ms = start_processing_timestamp - receipt_timestamp
-        queue_time_secs = queue_time_ms * 1000
+        queue_time_secs = queue_time_ms / 1000
 
         # unless otherwise specified, let server generate
         # the response time
