@@ -1,22 +1,20 @@
 // rust - simulate occasional problematic (long blocking) requests for disk IO
 // language version: 1.9.0
-// NOTE: does not compile yet
 // to build: rustc simulated-disk-io-server.rs
+// NOTE: this is my first Rust program, so much of it is probably crappy
 
-use std::io;
 use std::io::Read;
 use std::io::Write;
-use std::net::SocketAddr;
+use std::net::Shutdown;
 use std::net::{TcpListener, TcpStream};
-use std::process;
+use std::str;
 use std::thread;
-use std::thread::spawn;
 use std::time::Duration;
 
 const READ_TIMEOUT_SECS: u32 = 4;
 const STATUS_OK: i32 = 0;
 const STATUS_QUEUE_TIMEOUT: i32 = 1;
-const STATUS_BAD_INPUT: i32 = 2;
+//const STATUS_BAD_INPUT: i32 = 2;
 
 fn current_time_millis() -> u64 {
     //TODO: time::now()
@@ -28,11 +26,13 @@ fn simulated_file_read(disk_read_time_ms: u64) {
 }
 
 //TODO: review how stream should be accepted
-fn handle_socket_request(stream: TcpStream,
+fn handle_socket_request(stream: &mut TcpStream,
                          receipt_timestamp: u64) {
     // read request from client
-    let mut request_text = String::new();
-    if stream.read_line(&mut request_text).unwrap() > 0 {
+    //let mut request_text = String::new();
+    let mut request_buffer = [0; 512];
+    if stream.read(&mut request_buffer).unwrap() > 0 {
+        let request_text = str::from_utf8(&request_buffer).unwrap();
         // did we get anything from client?
         if request_text.trim().len() > 0 {
             // determine how long the request has waited in queue
@@ -55,9 +55,11 @@ fn handle_socket_request(stream: TcpStream,
                 if tokens.len() == 3 {
                     let parse_rc_result = tokens[0].parse();
                     match parse_rc_result {
+                        Err(_) => {},
                         Ok(rc_input) => {
                             let parse_time_result = tokens[1].parse();
                             match parse_time_result {
+                                Err(_) => {},
                                 Ok(req_response_time_ms) => {
                                     rc = rc_input;
                                     disk_read_time_ms = req_response_time_ms;
@@ -85,6 +87,8 @@ fn handle_socket_request(stream: TcpStream,
             stream.write_all(response_text.as_bytes()).unwrap();
         }
     }
+
+    let _ = stream.shutdown(Shutdown::Both);
 }
 
 fn main() {
@@ -94,11 +98,12 @@ fn main() {
 
     for stream in listener.incoming() {
         match stream {
+            Err(_) => {},
             Ok(mut stream) => {
                 let receipt_timestamp = current_time_millis();
                 thread::spawn(move|| {
                     //TODO: review how stream should be passed
-                    handle_socket_request(stream, receipt_timestamp);
+                    handle_socket_request(&mut stream, receipt_timestamp);
                 });
             }
         }
