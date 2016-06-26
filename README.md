@@ -35,11 +35,11 @@ Implementations
 | SimulatedDiskIOServer.cs           | C#            | N        | mono |
 | SimulatedDiskIOServer.d            | D             | N        | dmd |
 | SimulatedDiskIOServer.java         | Java          | N        | |
-| SimulatedDiskIOServer.nim          | Nim           | *Y*      | |
+| SimulatedDiskIOServer.nim          | Nim           | **Y**    | |
 | jython-simulated-disk-io-server.py | Python/Jython | N        | |
 | simulated-disk-io-server.c         | C             | N        | |
 | simulated-disk-io-server.go        | Go            | N        | |
-| simulated-disk-io-server.py        | Python        | *Y*      | Python 2.7 |
+| simulated-disk-io-server.py        | Python        | **Y**    | Python 2.7 |
 | simulated-disk-io-server.rs        | Rust          | N        | Rust 1.9 |
 
 
