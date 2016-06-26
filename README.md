@@ -27,6 +27,10 @@ and understandable manner and to explore various alternatives (whether
 they be eventlet alternatives in Python or even different programming
 languages).
 
+Client
+------
+The client utility used for testing is 'make_requests.py'.
+
 Implementations
 ---------------
 
