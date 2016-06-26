@@ -1,4 +1,6 @@
-// simulate occasional problematic (long blocking) requests for disk IO
+// Java - simulate occasional problematic (long blocking) requests for disk IO
+// to build: javac SimulatedDiskIOServer.java
+// to run: java SimulatedDiskIOServer
 
 import java.net.*;
 import java.io.*;

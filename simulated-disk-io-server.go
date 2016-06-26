@@ -1,4 +1,5 @@
-// simulate occasional problematic (long blocking) requests for disk IO
+// go - simulate occasional problematic (long blocking) requests for disk IO
+// to run: go simulated-disk-io-server.go
 
 package main
 

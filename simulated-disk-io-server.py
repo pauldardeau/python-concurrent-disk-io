@@ -1,4 +1,5 @@
-# simulate occasional problematic (long blocking) requests within eventlet
+# python - simulate occasional problematic (long blocking) requests within eventlet
+# language version: 2.7
 
 import eventlet
 from eventlet.green import socket

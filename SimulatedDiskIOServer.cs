@@ -1,4 +1,6 @@
-// simulate occasional problematic (long blocking) requests for disk IO
+// C# - simulate occasional problematic (long blocking) requests for disk IO
+// to build: mcs SimulatedDiskIOServer.cs
+// to run: mono SimulatedDiskIOServer.exe
 
 using System;
 using System.IO;

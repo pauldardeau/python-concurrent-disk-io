@@ -1,4 +1,5 @@
-// simulate occasional problematic (long blocking) requests for disk IO
+// D - simulate occasional problematic (long blocking) requests for disk IO
+// to build: dmd SimulatedDiskIOServer.d
 
 import core.thread;
 import std.concurrency;
