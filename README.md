@@ -15,6 +15,12 @@ the 'object server' (written in Python and making use of 'eventlet')
 could occasionally hang due to dying disk drives that cause excessive
 read times (measured in seconds as opposed to milliseconds).
 
+Intent
+------
+The **intent** of this project is **NOT** to give an opinions or
+recommendations, but rather to take an objective look at the
+problem and explore various alternatives.
+
 Baseline
 --------
 The baseline (reference) for this project is the eventlet-based
