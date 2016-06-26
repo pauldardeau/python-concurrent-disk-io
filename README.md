@@ -17,7 +17,7 @@ read times (measured in seconds as opposed to milliseconds).
 
 Intent
 ------
-The **intent** of this project is **NOT** to give an opinions or
+The **intent** of this project is **NOT** to give any opinions or
 recommendations, but rather to take an objective look at the
 problem and explore various alternatives.
 
