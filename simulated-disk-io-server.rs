@@ -25,11 +25,9 @@ fn simulated_file_read(disk_read_time_ms: u64) {
     thread::sleep(Duration::from_millis(disk_read_time_ms));
 }
 
-//TODO: review how stream should be accepted
 fn handle_socket_request(stream: &mut TcpStream,
                          receipt_timestamp: u64) {
     // read request from client
-    //let mut request_text = String::new();
     let mut request_buffer = [0; 512];
     if stream.read(&mut request_buffer).unwrap() > 0 {
         let request_text = str::from_utf8(&request_buffer).unwrap();
@@ -93,6 +91,7 @@ fn handle_socket_request(stream: &mut TcpStream,
 
 fn main() {
     let server_port = 7000;
+    //TODO: build string using server_port
     let listener = TcpListener::bind("127.0.0.1:7000").unwrap();
     println!("server listening on port {0}", server_port);
 
@@ -102,7 +101,6 @@ fn main() {
             Ok(mut stream) => {
                 let receipt_timestamp = current_time_millis();
                 thread::spawn(move|| {
-                    //TODO: review how stream should be passed
                     handle_socket_request(&mut stream, receipt_timestamp);
                 });
             }
