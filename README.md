@@ -44,10 +44,10 @@ Implementations
 | ----                               | --------      | -------- | ---------- |
 | SimulatedDiskIOServer.cs           | C#            | N        | Mono C# compiler version 4.2.1.0 |
 | SimulatedDiskIOServer.d            | D             | N        | DMD64 D Compiler v2.069.2-devel |
-| SimulatedDiskIOServer.java         | Java          | N        | openjdk version 1.8.0 |
+| SimulatedDiskIOServer.java         | Java (JVM)    | N        | openjdk version 1.8.0 |
 | SimulatedDiskIOServer.nim          | Nim           | **Y**    | Nim 0.11.2 |
-| SimulatedDiskIOServer.scala        | Scala         | N        | Scala compiler version 2.11.8 |
-| jython-simulated-disk-io-server.py | Python/Jython | N        | Jython 2.7.0 |
+| SimulatedDiskIOServer.scala        | Scala (JVM)   | N        | Scala compiler version 2.11.8 |
+| jython-simulated-disk-io-server.py | Python (JVM)n | N        | Jython 2.7.0 |
 | simulated-disk-io-server.c         | C             | N        | gcc 4.8.5 |
 | simulated-disk-io-server.go        | Go            | N        | go version go1.2.1 linux/amd64 |
 | simulated-disk-io-server.py        | Python        | **Y**    | Python 2.7 and eventlet |
