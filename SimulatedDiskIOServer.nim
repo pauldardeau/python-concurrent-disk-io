@@ -68,7 +68,8 @@ proc main(server_port: int) =
 
     try:
         while true:
-            var client_socket: Socket = Socket()
+            #sockType SOCK_STREAM
+            var client_socket: Socket = newSocket()
             accept(server_socket, client_socket)
             let receipt_timestamp = current_time_millis()
             spawn handle_socket_request(client_socket, receipt_timestamp)
