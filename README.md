@@ -31,25 +31,6 @@ on this topic is to use a 'sleep' call to mimic the blocking call.
 This is what each of the implementations presented here does to
 simulate the long blocking call.
 
-"Just Use Async IO"
--------------------
-"Just use async IO" is probably the most common suggested solution
-to the problem at hand. Unfortunately, it doesn't solve the problem.
-The problem is when the read or write operation starts and it then
-hangs. The standard Python implementation uses green threads and
-also contains a Global Interpreter Lock (GIL) that severely limits
-parallelism. The presence of green threads and the GIL makes the
-problem much worse than would ordinarily be the case -- ALL requests
-become blocked on the problematic IO request.
-
-The Problem is Not Python
--------------------------
-It would be easy to pin the problem on Python (the language) and
-conclude that the language is fundamentally flawed. However,
-the python version that uses threading did not experience the same
-problems. Therefore, it's not a defect in the language itself.
-It appears that the problem may be specific to eventlets.
-
 Intent
 ------
 The **intent** of this project is **NOT** to give any opinions or
