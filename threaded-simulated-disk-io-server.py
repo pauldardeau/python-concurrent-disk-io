@@ -1,5 +1,5 @@
-# jython - simulate occasional problematic (long blocking) requests
-# to run: jython jython-simulated-disk-io-server.py
+# python threads - simulate occasional problematic (long blocking) requests
+# to run: python threaded-simulated-disk-io-server.py
 
 
 import string
