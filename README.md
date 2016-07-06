@@ -63,7 +63,7 @@ Implementations
 | SimulatedDiskIOServer.cs           | C#            | N        | Mono C# compiler version 4.2.1.0 |
 | SimulatedDiskIOServer.d            | D             | N        | DMD64 D Compiler v2.069.2-devel |
 | SimulatedDiskIOServer.java         | Java (JVM)    | N        | openjdk version 1.8.0 |
-| SimulatedDiskIOServer.nim          | Nim           | **Y**    | Nim 0.11.2 |
+| SimulatedDiskIOServer.nim          | Nim           | N        | Nim 0.14.2 |
 | SimulatedDiskIOServer.scala        | Scala (JVM)   | N        | Scala compiler version 2.11.8 |
 | jython-simulated-disk-io-server.py | Python (JVM)  | N        | Jython 2.7.0 |
 | simulated-disk-io-server.c         | C             | N        | gcc 4.8.5 |
