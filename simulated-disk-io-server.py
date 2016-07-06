@@ -7,8 +7,6 @@ import string
 import time
 
 
-NUM_GREEN_THREADS = 5
-
 READ_TIMEOUT_SECS = 4
 
 STATUS_OK = 0
