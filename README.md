@@ -15,6 +15,24 @@ the 'object server' (written in Python and making use of 'eventlet')
 could occasionally hang due to dying disk drives that cause excessive
 read times (measured in seconds as opposed to milliseconds).
 
+Long Blocking IO
+----------------
+The fundamental problem is that when hard disk drives are starting
+to go bad IO requests to the drive can block for an extended period
+of time (tens of seconds). The problem is not present when all disk
+drives are functioning normally.
+
+"Just Use Async IO"
+-------------------
+"Just use async IO" is probably the most common suggested solution
+to the problem at hand. Unfortunately, it doesn't solve the problem.
+The problem is when the read or write operation starts and it then
+hangs. The standard Python implementation uses green threads and
+also contains a Global Interpreter Lock (GIL) that severely limits
+parallelism. The presence of green threads and the GIL makes the
+problem much worse than would ordinarily be the case -- ALL requests
+become blocked on the problematic IO request.
+
 Intent
 ------
 The **intent** of this project is **NOT** to give any opinions or
