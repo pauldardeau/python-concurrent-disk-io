@@ -82,7 +82,7 @@ Implementations
 | SimulatedDiskIOServer.nim            | Nim           | N        | Nim 0.14.2 |
 | SimulatedDiskIOServer.scala          | Scala (JVM)   | N        | Scala compiler version 2.11.8 |
 | threaded-simulated-disk-io-server.py | Python (JVM)  | N        | Jython 2.7.0 |
-| threaded-simulated-disk-io-server.py | Python        | N        | CPython 2.7 |
+| threaded-simulated-disk-io-server.py | Python        | N        | CPython 2.7.6 |
 | simulated-disk-io-server.c           | C             | N        | gcc 4.8.5 |
 | simulated-disk-io-server.go          | Go            | N        | go version go1.2.1 linux/amd64 |
 | eventlet-simulated-disk-io-server.py | Python        | **Y**    | CPython 2.7 and eventlet |
