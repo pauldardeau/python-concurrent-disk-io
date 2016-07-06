@@ -33,6 +33,16 @@ parallelism. The presence of green threads and the GIL makes the
 problem much worse than would ordinarily be the case -- ALL requests
 become blocked on the problematic IO request.
 
+The Problem is Not Python
+-------------------------
+It would be easy to pin the problem on Python (the language) and
+conclude that the language is fundamentally flawed. Such a conclusion
+would be incorrect. The test performed using **Jython** (Python
+implemented on the Java Virtual Machine) did not experience the same
+problems encountered by CPython. Therefore, it's not a defect in the
+language definition. The problems experienced with CPython appear to
+be based on the **implementation**.
+
 Intent
 ------
 The **intent** of this project is **NOT** to give any opinions or
@@ -41,8 +51,8 @@ problem and explore various alternatives.
 
 Baseline
 --------
-The baseline (reference) for this project is the eventlet-based
-Python implementation (simulated-disk-io-server.py).
+The baseline (reference) for this project is the **eventlet-based
+CPython** implementation (simulated-disk-io-server.py).
 
 Alternatives Explored
 ---------------------
@@ -68,7 +78,7 @@ Implementations
 | jython-simulated-disk-io-server.py | Python (JVM)  | N        | Jython 2.7.0 |
 | simulated-disk-io-server.c         | C             | N        | gcc 4.8.5 |
 | simulated-disk-io-server.go        | Go            | N        | go version go1.2.1 linux/amd64 |
-| simulated-disk-io-server.py        | Python        | **Y**    | Python 2.7 and eventlet |
+| simulated-disk-io-server.py        | Python        | **Y**    | CPython 2.7 and eventlet |
 | simulated-disk-io-server.rs        | Rust          | N        | Rust 1.9 |
 
 
