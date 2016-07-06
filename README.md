@@ -22,6 +22,15 @@ to go bad IO requests to the drive can block for an extended period
 of time (tens of seconds). The problem is not present when all disk
 drives are functioning normally.
 
+Testing Long Blocking IO
+------------------------
+Since the long blocking IO scenario here occurs when a disk drive
+is going bad, it's very difficult (if not impossible) to reliably
+reproduce. The concensus from some of the OpenStack Swift experts
+on this topic is to use a 'sleep' call to mimic the blocking call.
+This is what each of the implementations presented here does to
+simulate the long blocking call.
+
 "Just Use Async IO"
 -------------------
 "Just use async IO" is probably the most common suggested solution
