@@ -61,9 +61,27 @@ and understandable manner and to explore various alternatives (whether
 they be eventlet alternatives in Python or even different programming
 languages).
 
+Note on Implementations
+-----------------------
+None of the implementations presented here are idiomatic for their
+respective languages. This was done intentionally to keep the code
+clear and somewhat similar (across languages).
+
 Client
 ------
 The client utility used for testing is 'make_requests.py'.
+
+The Test
+--------
+1. Start the server implementation
+2. Open multiple shell sessions (about 4 or 5)
+3. In each shell session, run 'python make_requests.py' so that
+all 4 or 5 shell sessions are running concurrently
+
+If the client requests experience timeout, then the problem scenario
+has manifested itself. If none of the concurrent client requests are
+able to interfere (and cause other requests to time out), then the
+problem scenario is absent.
 
 Implementations
 ---------------
