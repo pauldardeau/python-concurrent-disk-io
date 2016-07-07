@@ -1,0 +1,6 @@
+https://www.mail-archive.com/search?l=openstack-dev@lists.openstack.org&q=subject:%22%5C%5Bopenstack%5C-dev%5C%5D+Reasoning+behind+my+vote+on+the+Go+topic%22&o=newest&f=1
+
+http://eavesdrop.openstack.org/irclogs/%23openstack-swift/%23openstack-swift.2016-06-02.log.html#t2016-06-02T21:47:55
+
+http://eavesdrop.openstack.org/irclogs/%23openstack-swift/%23openstack-swift.2016-06-03.log.html#t2016-06-03T16:49:11
+
