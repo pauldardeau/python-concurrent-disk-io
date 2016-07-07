@@ -10,6 +10,7 @@ from threading import Thread
 
 READ_TIMEOUT_SECS = 4
 
+SERVER_NAME = 'http-threaded-simulated-disk-io-server.py'
 HTTP_STATUS_OK = '200 OK'
 HTTP_STATUS_TIMEOUT = '408 TIMEOUT'
 HTTP_STATUS_BAD_REQUEST = '400 BAD REQUEST'
@@ -23,6 +24,7 @@ def handle_socket_request(sock, receipt_timestamp):
     reader = sock.makefile('r')
     writer = sock.makefile('w')
     request_text = reader.readline()
+    reader.close()
     if request_text:
         request_text = request_text.rstrip()
         start_processing_timestamp = time.time()
@@ -61,12 +63,13 @@ def handle_socket_request(sock, receipt_timestamp):
         tot_request_time_ms = queue_time_ms + disk_read_time_ms
 
         # construct response and send back to client
-        resp_text = 'HTTP/1.1 %s\n\n' % rc
+        resp_text = 'HTTP/1.1 %s\n' % rc
+        resp_text += "%s\n" % SERVER_NAME
+        resp_text += "Connection: close\n\n"
         resp_text += "%d,%s" % \
             (tot_request_time_ms, file_path)
         writer.write(resp_text)
         writer.flush()
-    reader.close()
     writer.close()
     sock.close()
 
