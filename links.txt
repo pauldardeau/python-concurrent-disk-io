@@ -1,6 +1,24 @@
+http://lists.openstack.org/pipermail/openstack-dev/2016-May/094549.html
+
+http://lists.openstack.org/pipermail/openstack-dev/2016-May/094720.html
+
+http://lists.openstack.org/pipermail/openstack-dev/2016-June/096813.html
+
 https://www.mail-archive.com/search?l=openstack-dev@lists.openstack.org&q=subject:%22%5C%5Bopenstack%5C-dev%5C%5D+Reasoning+behind+my+vote+on+the+Go+topic%22&o=newest&f=1
 
 http://eavesdrop.openstack.org/irclogs/%23openstack-swift/%23openstack-swift.2016-06-02.log.html#t2016-06-02T21:47:55
 
 http://eavesdrop.openstack.org/irclogs/%23openstack-swift/%23openstack-swift.2016-06-03.log.html#t2016-06-03T16:49:11
+
+http://lists.openstack.org/pipermail/openstack-dev/2015-April/063019.html
+
+http://eavesdrop.openstack.org/irclogs/%23openstack-swift/%23openstack-swift.2014-11-24.log.html#t2014-11-24T18:07:30
+
+http://www.scality.com/openstack-vancouver-summit-technical-wrap-up/
+
+https://www.openstack.org/summit/tokyo-2015/videos/presentation/omg-objects-the-unscaly-underbelly-of-openstack-swift
+
+http://blog.rackspace.com/making-openstack-powered-rackspace-cloud-files-buzz-with-hummingbird/
+
+https://etherpad.openstack.org/p/liberty-swift-hummingbird
 
