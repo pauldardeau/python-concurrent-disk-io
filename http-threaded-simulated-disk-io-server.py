@@ -76,7 +76,7 @@ def handle_socket_request(sock, receipt_timestamp):
         (tot_request_time_ms, file_path)
 
     response_headers = 'HTTP/1.1 %s\n' % rc
-    response_headers += "%s\n" % SERVER_NAME
+    response_headers += "Server: %s\n" % SERVER_NAME
     response_headers += "Content-Length: %d\n" % len(response_body)
     response_headers += "Connection: close\n"
     response_headers += "\n"
