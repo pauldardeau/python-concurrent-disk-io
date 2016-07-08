@@ -12,9 +12,10 @@ public class HttpThreadedSimulatedDiskIOServer {
 
     public static final int READ_TIMEOUT_SECS = 4;
 
-    public static final int HTTP_STATUS_OK = 200;
-    public static final int HTTP_STATUS_TIMEOUT = 418;
-    public static final int HTTP_STATUS_BAD_REQUEST = 400;
+    public static final String SERVER_NAME = "HttpThreadedSimulatedDiskIOServer.java";
+    public static final String HTTP_STATUS_OK = "200 OK";
+    public static final String HTTP_STATUS_TIMEOUT = "418 TIMEOUT";
+    public static final String HTTP_STATUS_BAD_REQUEST = "400 BAD REQUEST";
 
 
     public static void simulated_file_read(long disk_read_time_ms) {
@@ -46,7 +47,7 @@ public class HttpThreadedSimulatedDiskIOServer {
                 receipt_timestamp;
                 final int queue_time_secs = (int) (queue_time_ms / 1000);
 
-                int rc = HTTP_STATUS_OK;
+                String rc = HTTP_STATUS_OK;
                 long disk_read_time_ms = 0;
                 String file_path = "";
 
@@ -55,12 +56,21 @@ public class HttpThreadedSimulatedDiskIOServer {
                 System.out.println("timeout (queue)");
                     rc = HTTP_STATUS_TIMEOUT;
                 } else {
-                    StringTokenizer st = new StringTokenizer(request_text,",");
-                    if (st.countTokens() == 3) {
-                        rc = Integer.parseInt(st.nextToken());
-                        disk_read_time_ms = Long.parseLong(st.nextToken());
-                        file_path = st.nextToken();
-                        simulated_file_read(disk_read_time_ms);
+                    StringTokenizer stRequestLine = new StringTokenizer(request_text, " ");
+                    if (stRequestLine.countTokens() > 1) { 
+                        // skip over the first one (http verb)
+                        stRequestLine.nextToken();
+                        StringTokenizer st = new StringTokenizer(stRequestLine.nextToken(),",");
+                        if (st.countTokens() == 3) {
+                            int rc_input = Integer.parseInt(st.nextToken());
+                            disk_read_time_ms = Long.parseLong(st.nextToken());
+                            file_path = st.nextToken();
+                            simulated_file_read(disk_read_time_ms);
+                        } else {
+                            rc = HTTP_STATUS_BAD_REQUEST;
+                        }
+                    } else {
+                        rc = HTTP_STATUS_BAD_REQUEST;
                     }
                 }
 
@@ -69,10 +79,15 @@ public class HttpThreadedSimulatedDiskIOServer {
                 final long tot_request_time_ms =
                     queue_time_ms + disk_read_time_ms;
 
-                // return response text to client
-                writer.write("" + rc + "," +
-                             tot_request_time_ms + "," +
-                             file_path + "\n");
+                // return response to client
+                String response_body = "" + tot_request_time_ms + "," + file_path;
+
+                String response_headers = "HTTP/1.1 " + rc + "\n" +
+                                          "Server: " + SERVER_NAME + "\n" +
+                                          "Content-Length: " + response_body.length() + "\n" +
+                                          "\n";
+                writer.write(response_headers);
+                writer.write(response_body);
                 writer.flush();
             }
         } catch (IOException e) {
