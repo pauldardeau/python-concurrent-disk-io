@@ -11,6 +11,7 @@ import sys
 
 
 READ_TIMEOUT_SECS = 4
+LISTEN_BACKLOG = 500
 
 SERVER_NAME = 'http-threaded-simulated-disk-io-server.py'
 HTTP_STATUS_OK = '200 OK'
@@ -53,7 +54,7 @@ def handle_socket_request(sock, receipt_timestamp):
                 fields = string.split(args_text, ',')
                 if len(fields) == 3:
                     first_field = fields[0].strip('/')
-                    rc = int(first_field)
+                    #rc = int(first_field)
                     disk_read_time_ms = long(fields[1])
                     file_path = fields[2]
                     simulated_file_read(disk_read_time_ms)
@@ -74,15 +75,15 @@ def handle_socket_request(sock, receipt_timestamp):
     response_body = "%d,%s" % \
         (tot_request_time_ms, file_path)
 
-    response_text = 'HTTP/1.1 %s\n' % rc
-    response_text += "%s\n" % SERVER_NAME
-    response_text += "Content-Length: %d\n" % len(response_body)
-    response_text += "Connection: close\n"
-    response_text += "\n"
-    response_text += response_body
+    response_headers = 'HTTP/1.1 %s\n' % rc
+    response_headers += "%s\n" % SERVER_NAME
+    response_headers += "Content-Length: %d\n" % len(response_body)
+    response_headers += "Connection: close\n"
+    response_headers += "\n"
 
     try:
-        sock.send(response_text)
+        sock.send(response_headers)
+        sock.send(response_body)
     except socket.error:
         pass
 
@@ -107,7 +108,7 @@ def main(server_port):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind(('', server_port))
-    server_socket.listen(100)
+    server_socket.listen(LISTEN_BACKLOG)
     print("server listening on port %d" % server_port)
 
     try:
