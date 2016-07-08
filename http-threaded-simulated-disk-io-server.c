@@ -120,7 +120,7 @@ void handle_socket_request(ThreadRequest* thread_request) {
 
             snprintf(response_headers, 255,
                      "HTTP/1.1 %s\n"
-                     "%s\n"
+                     "Server: %s\n"
                      "Content-Length: %zd\n"
                      "Connection: close\n"
                      "\n",
