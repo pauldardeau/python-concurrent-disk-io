@@ -10,11 +10,14 @@ import java.util._
 
 object HttpThreadedSimulatedDiskIOServer {
 
-    val READ_TIMEOUT_SECS = 4
+    val SERVER_PORT = 7000
+    val QUEUE_TIMEOUT_SECS = 4
     val LISTEN_BACKLOG = 500
-    val HTTP_STATUS_OK = 200
-    val HTTP_STATUS_TIMEOUT = 408
-    val HTTP_STATUS_BAD_REQUEST = 400
+
+    val SERVER_NAME = "HttpThreadedSimulatedDiskIOServer.scala"
+    val HTTP_STATUS_OK = "200 OK"
+    val HTTP_STATUS_TIMEOUT = "408 TIMEOUT"
+    val HTTP_STATUS_BAD_REQUEST = "400 BAD REQUEST"
 
     def current_time_millis(): Long = {
         //TODO: implement current_time_millis
@@ -29,9 +32,9 @@ object HttpThreadedSimulatedDiskIOServer {
                               receipt_timestamp: Long) = {
         var reader: BufferedReader = null
         var writer: BufferedWriter = null
-        var rc: HTTP_STATUS_OK
+        var rc: String = HTTP_STATUS_BAD_REQUEST
         var file_path = ""
-        val tot_request_time_ms: Long = 0
+        var tot_request_time_ms: Long = 0
 
         try {
             reader =
@@ -54,32 +57,51 @@ object HttpThreadedSimulatedDiskIOServer {
                 var disk_read_time_ms: Long = 0
 
                 // has this request already timed out?
-                if (queue_time_secs >= READ_TIMEOUT_SECS) {
+                if (queue_time_secs >= QUEUE_TIMEOUT_SECS) {
                     println("timeout (queue)")
                     rc = HTTP_STATUS_TIMEOUT
                 } else {
-                    val st = new StringTokenizer(request_text,",")
-                    if (st.countTokens() == 3) {
-                        rc = Integer.parseInt(st.nextToken())
-                        disk_read_time_ms = st.nextToken().toLong
-                        file_path = st.nextToken()
-                        simulated_file_read(disk_read_time_ms)
+                    val stRequest = new StringTokenizer(request_text, " ")
+                    if (stRequest.countTokens() == 2) {
+                        val request_method = stRequest.nextToken()
+                        val request_args = stRequest.nextToken()
+                        val stArgs = new StringTokenizer(request_args, ",")
+                        if (stArgs.countTokens() == 3) {
+                            try {
+                                val rc_input =
+                                    Integer.parseInt(stArgs.nextToken())
+                                disk_read_time_ms = stArgs.nextToken().toLong
+                                file_path = stArgs.nextToken()
+                                simulated_file_read(disk_read_time_ms)
+                                rc = HTTP_STATUS_OK
+                            } finally {
+                                // ignore it
+                            }
+                        }
                     }
                 }
 
                 // total request time is sum of time spent in queue and the
                 // simulated disk read time
-                tot_request_time_ms: Long =
+                tot_request_time_ms =
                     queue_time_ms + disk_read_time_ms
-            } else {
-                rc = HTTP_BAD_REQUEST
-                tot_request_time_ms = 0
             }
 
             // return response to client
-            writer.write("" + rc + "," +
-                         tot_request_time_ms + "," +
-                         file_path + "\n")
+            val response_body = "" +
+                                tot_request_time_ms +
+                                "," +
+                                file_path
+
+            val response_headers = "HTTP/1.1 " + rc + "\n" +
+                                   "Server: " + SERVER_NAME + "\n" +
+                                   "Content-Length: " +
+                                       response_body.length() + "\n" +
+                                   "Connection: close\n" +
+                                   "\n"
+
+            writer.write(response_headers)
+            writer.write(response_body)
             writer.flush()
         } finally {
             if (reader != null) {
@@ -95,10 +117,12 @@ object HttpThreadedSimulatedDiskIOServer {
     }
 
     def main(args: Array[String]) = {
-        val server_port = 7000
         //TODO: set listen backlog?
-        val server_socket = new ServerSocket(server_port)
-        println("server listening on port " + server_port)
+        val server_socket = new ServerSocket(SERVER_PORT)
+        println("server (" +
+                SERVER_NAME +
+                ") listening on port " +
+                SERVER_PORT)
 
         while (true) {
             val sock: Socket = server_socket.accept()
