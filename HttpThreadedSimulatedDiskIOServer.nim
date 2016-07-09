@@ -10,10 +10,14 @@ import strutils
 import threadpool
 import times
 
-const server_port = 7000
-const HTTP_STATUS_OK = 200
-const HTTP_STATUS_TIMEOUT = 418
-const HTTP_STATUS_BAD_REQUEST = 400
+const SERVER_PORT = 7000
+const QUEUE_TIMEOUT_SECS = 4
+const LISTEN_BACKLOG = 500
+
+const SERVER_NAME = "HttpThreadedSimulatedDiskIOServer.nim" 
+const HTTP_STATUS_OK = "200 OK"
+const HTTP_STATUS_TIMEOUT = "408 TIMEOUT"
+const HTTP_STATUS_BAD_REQUEST = "400 BAD REQUEST"
 
 proc simulated_file_read(elapsed_time_ms: int64) =
     sleep(int(elapsed_time_ms))
@@ -26,50 +30,71 @@ proc handle_socket_request(client_socket: Socket, receipt_timestamp: int64) {.th
         var request_text = TaintedString""
         client_socket.readLine(request_text)
 
+        var rc = HTTP_STATUS_OK
+        var disk_read_time_ms = 0
+        var file_path = ""
+        var tot_request_time_ms: int64 = 0
+
         if len(request_text) > 0:
             let start_processing_timestamp = current_time_millis()
             let queue_time_ms = start_processing_timestamp - receipt_timestamp
             let queue_time_secs = int(queue_time_ms) / 1000
 
-            var rc = HTTP_STATUS_OK
-            var disk_read_time_ms = 0
-            var file_path = ""
-
             # has this request already timed out?
-            if queue_time_secs >= 4:
+            if queue_time_secs >= QUEUE_TIMEOUT_SECS:
                 echo("timeout (queue)")
                 rc = HTTP_STATUS_TIMEOUT
             else:
-                let fields = split(request_text, ',')
-                if len(fields) == 3:
-                    rc = parseInt(fields[0])
-                    disk_read_time_ms = parseInt(fields[1])
-                    file_path = fields[2]
-                    simulated_file_read(disk_read_time_ms)
+                let line_tokens = split(request_text, ' ')
+                if len(line_tokens) > 1:
+                    let request_method = line_tokens[0]
+                    let args_text = line_tokens[1]
+                    let fields = split(args_text, ',')
+                    if len(fields) == 3:
+                        let first_field = fields[0]
+                        let rc_as_string = first_field[1 .. len(first_field)]
+                        let rc_input = parseInt(rc_as_string)
+                        disk_read_time_ms = parseInt(fields[1])
+                        file_path = fields[2]
+                        simulated_file_read(disk_read_time_ms)
+                    else:
+                        rc = HTTP_STATUS_BAD_REQUEST
                 else:
                     rc = HTTP_STATUS_BAD_REQUEST
 
             # total request time is sum of time spent in queue and the
             # simulated disk read time
-            let tot_request_time_ms = queue_time_ms + disk_read_time_ms
+            tot_request_time_ms = queue_time_ms + disk_read_time_ms
 
-            # construct response and send back to client
-            let response_text = format("$1,$2,$3\n", rc, int(tot_request_time_ms), file_path)
-            client_socket.send(response_text)
+        # construct response and send back to client
+        let response_body = format("$1,$2", int(tot_request_time_ms), file_path)
+
+        let response_headers = format("HTTP/1.1 $1\n" &
+                                      "Server: $2\n" &
+                                      "Content-Length: $3\n" &
+                                      "Connection: close\n" &
+                                      "\n",
+                                      rc,
+                                      SERVER_NAME,
+                                      len(response_body))
+        client_socket.send(response_headers)
+        client_socket.send(response_body)
     finally:
         client_socket.close()
 
 proc main(server_port: int) =
     let server_socket: Socket = newSocket()
-    #TODO: set listen backlog?
     server_socket.setSockOpt(OptReuseAddr, true)
     server_socket.bindAddr(Port(server_port), "127.0.0.1")
-    server_socket.listen()
-    echo("server listening on port " & $server_port)
+    server_socket.listen(LISTEN_BACKLOG)
+    let startup_msg = format("server ($1) listening on port $2",
+                             SERVER_NAME,
+                             server_port)
+    echo(startup_msg)
 
     try:
         while true:
-            #sockType SOCK_STREAM
+            #var client_socket: Socket = newSocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, true)
             var client_socket: Socket = newSocket()
             accept(server_socket, client_socket)
             let receipt_timestamp = current_time_millis()
@@ -77,5 +102,5 @@ proc main(server_port: int) =
     finally:
         server_socket.close()
 
-main(server_port)
+main(SERVER_PORT)
 
