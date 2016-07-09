@@ -21,6 +21,7 @@ typedef struct _ThreadRequest {
 } ThreadRequest;
 
 
+static const int SERVER_PORT = 7000;
 static const int READ_TIMEOUT_SECS = 4;
 static const int LISTEN_BACKLOG = 500;
 
@@ -45,18 +46,20 @@ void handle_socket_request(ThreadRequest* thread_request) {
     char response_headers[256];
     char response_body[256];
     const char* file_path = NULL;
+    long tot_request_time_ms = 0L;
+    const char* rc = HTTP_STATUS_OK;
 
     memset(request_text, 0, 256);
     memset(response_headers, 0, 256);
     memset(response_body, 0, 256);
 
     // read request from client
-    const int rc = read(thread_request->client_socket,
-                        request_text,
-                        1024);
+    const int bytes_read = read(thread_request->client_socket,
+                                request_text,
+                                1024);
 
     // read from socket succeeded?
-    if (rc > 0) {
+    if (bytes_read > 0) {
         const int len_req_payload = strlen(request_text);
         // did we get anything from client?
         if (len_req_payload > 0) {
@@ -71,7 +74,6 @@ void handle_socket_request(ThreadRequest* thread_request) {
                 start_processing_timestamp - thread_request->receipt_timestamp;
             const int server_queue_time_secs = server_queue_time_ms / 1000;
 
-            const char* rc = HTTP_STATUS_OK;
             long disk_read_time_ms = 0L;
 
             // has this request already timed out?
@@ -110,34 +112,34 @@ void handle_socket_request(ThreadRequest* thread_request) {
 
             // total request time is sum of time spent in queue and the
             // simulated disk read time
-            const long tot_request_time_ms =
+            tot_request_time_ms =
                 server_queue_time_ms + disk_read_time_ms;
-
-            // create response text
-            snprintf(response_body, 255, "%ld,%s",
-                     tot_request_time_ms,
-                     file_path);
-
-            snprintf(response_headers, 255,
-                     "HTTP/1.1 %s\n"
-                     "Server: %s\n"
-                     "Content-Length: %zd\n"
-                     "Connection: close\n"
-                     "\n",
-                     rc,
-                     SERVER_NAME,
-                     strlen(response_body));
-
-            // return response text to client
-            write(thread_request->client_socket,
-                  response_headers,
-                  strlen(response_headers));
-
-            write(thread_request->client_socket,
-                  response_body,
-                  strlen(response_body));
         }
     }
+
+    // create response text
+    snprintf(response_body, 255, "%ld,%s",
+             tot_request_time_ms,
+             file_path);
+
+    snprintf(response_headers, 255,
+             "HTTP/1.1 %s\n"
+             "Server: %s\n"
+             "Content-Length: %zd\n"
+             "Connection: close\n"
+             "\n",
+             rc,
+             SERVER_NAME,
+             strlen(response_body));
+
+    // return response to client
+    write(thread_request->client_socket,
+          response_headers,
+          strlen(response_headers));
+
+    write(thread_request->client_socket,
+          response_body,
+          strlen(response_body));
 
     // close client socket connection
     close(thread_request->client_socket);
@@ -150,7 +152,6 @@ void* thread_handle_socket_request(void* thread_arg) {
 }
 
 int main(int argc, char* argv[]) {
-    const int server_port = 7000;
     int server_socket;
     int sock;
     int rc;
@@ -163,9 +164,16 @@ int main(int argc, char* argv[]) {
         goto no_socket;
     }
 
+    int enable = 1;
+    setsockopt(server_socket,
+               SOL_SOCKET,
+               SO_REUSEADDR,
+               &enable,
+               sizeof(int));
+
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(server_port);
+    serv_addr.sin_port = htons(SERVER_PORT);
     serv_addr.sin_addr.s_addr = INADDR_ANY;
 
     rc = bind(server_socket,
@@ -180,7 +188,7 @@ int main(int argc, char* argv[]) {
         goto no_socket;
     }
 
-    printf("server listening on port %d\n", server_port);
+    printf("server (%s) listening on port %d\n", SERVER_NAME, SERVER_PORT);
 
     while (1) {
         // wait for next socket connection from a client
@@ -206,8 +214,8 @@ no_socket:
     if (server_socket > 0) {
         close(server_socket);
     }
-    printf("error: unable to create server socket on port %d",
-           server_port);
+    printf("error: unable to create server socket on port %d\n",
+           SERVER_PORT);
     exit(1);
 }
 
