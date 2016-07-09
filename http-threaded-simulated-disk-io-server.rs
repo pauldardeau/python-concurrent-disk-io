@@ -11,7 +11,7 @@ use std::str;
 use std::thread;
 use std::time::Duration;
 
-const READ_TIMEOUT_SECS: u32 = 4;
+const QUEUE_TIMEOUT_SECS: u32 = 4;
 //const LISTEN_BACKLOG: u32 = 500;
 
 const SERVER_NAME: &'static str = "http-threaded-simulated-disk-io-server.rs";
@@ -50,7 +50,7 @@ fn handle_socket_request(stream: &mut TcpStream,
             let server_queue_time_secs = x as u32;
 
             // has this request already timed out?
-            if server_queue_time_secs >= READ_TIMEOUT_SECS {
+            if server_queue_time_secs >= QUEUE_TIMEOUT_SECS {
                 println!("timeout (queue)");
                 rc = HTTP_STATUS_TIMEOUT;
             } else {
