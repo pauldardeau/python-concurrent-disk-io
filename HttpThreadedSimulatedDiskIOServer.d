@@ -14,7 +14,7 @@ static int READ_TIMEOUT_SECS = 4;
 static int LISTEN_BACKLOG = 500;
 
 static int HTTP_STATUS_OK = 200;
-static int HTTP_STATUS_TIMEOUT = 418;
+static int HTTP_STATUS_TIMEOUT = 408;
 static int HTTP_STATUS_BAD_REQUEST = 400;
 
 

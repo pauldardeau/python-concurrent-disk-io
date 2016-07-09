@@ -13,7 +13,7 @@ object HttpThreadedSimulatedDiskIOServer {
     val READ_TIMEOUT_SECS = 4
     val LISTEN_BACKLOG = 500
     val HTTP_STATUS_OK = 200
-    val HTTP_STATUS_TIMEOUT = 418
+    val HTTP_STATUS_TIMEOUT = 408
     val HTTP_STATUS_BAD_REQUEST = 400
 
     def current_time_millis(): Long = {

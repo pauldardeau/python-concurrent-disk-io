@@ -14,7 +14,7 @@ public class HttpThreadedSimulatedDiskIOServer {
 
     public static final String SERVER_NAME = "HttpThreadedSimulatedDiskIOServer.java";
     public static final String HTTP_STATUS_OK = "200 OK";
-    public static final String HTTP_STATUS_TIMEOUT = "418 TIMEOUT";
+    public static final String HTTP_STATUS_TIMEOUT = "408 TIMEOUT";
     public static final String HTTP_STATUS_BAD_REQUEST = "400 BAD REQUEST";
 
 
