@@ -10,7 +10,8 @@ import signal
 import sys
 
 
-READ_TIMEOUT_SECS = 4
+SERVER_PORT = 7000
+QUEUE_TIMEOUT_SECS = 4
 LISTEN_BACKLOG = 500
 
 SERVER_NAME = 'http-threaded-simulated-disk-io-server.py'
@@ -31,19 +32,21 @@ def handle_socket_request(sock, receipt_timestamp):
             request_text = buffer_text
     except socket.error:
         request_text = ''
-    
+
+    rc = HTTP_STATUS_BAD_REQUEST
+    tot_request_time_ms = 0
+    file_path = ''
+
     if len(request_text) > 0:
         request_text = request_text.rstrip()
         start_processing_timestamp = time.time()
         queue_time_ms = start_processing_timestamp - receipt_timestamp
         queue_time_secs = queue_time_ms / 1000
 
-        rc = HTTP_STATUS_OK
         disk_read_time_ms = 0
-        file_path = ''
 
         # has this request already timed out?
-        if queue_time_secs >= READ_TIMEOUT_SECS:
+        if queue_time_secs >= QUEUE_TIMEOUT_SECS:
             print("timeout (queue)")
             rc = HTTP_STATUS_TIMEOUT
         else:
@@ -58,18 +61,11 @@ def handle_socket_request(sock, receipt_timestamp):
                     disk_read_time_ms = long(fields[1])
                     file_path = fields[2]
                     simulated_file_read(disk_read_time_ms)
-                else:
-                    rc = HTTP_STATUS_BAD_REQUEST
-            else:
-                rc = HTTP_STATUS_BAD_REQUEST
+                    rc = HTTP_STATUS_OK
 
         # total request time is sum of time spent in queue and the
         # simulated disk read time
         tot_request_time_ms = queue_time_ms + disk_read_time_ms
-    else:
-        rc = HTTP_STATUS_BAD_REQUEST
-        tot_request_time_ms = 0
-        file_path = ''
 
     # construct response and send back to client
     response_body = "%d,%s" % \
@@ -109,7 +105,7 @@ def main(server_port):
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind(('', server_port))
     server_socket.listen(LISTEN_BACKLOG)
-    print("server listening on port %d" % server_port)
+    print("server (%s) listening on port %d" % (SERVER_NAME, server_port))
 
     try:
         while True:
@@ -117,8 +113,7 @@ def main(server_port):
                 sock, addr = server_socket.accept()
             except socket.error:
                 continue
-            receipt_timestamp = time.time()
-            Thread(target=lambda: handle_socket_request(sock, receipt_timestamp)).start()
+            Thread(target=lambda: handle_socket_request(sock, time.time())).start()
     except KeyboardInterrupt:
         sys.exit(0)
 
@@ -126,6 +121,5 @@ def main(server_port):
 if __name__=='__main__':
     signal.signal(signal.SIGINT, exit_handler)
     signal.signal(signal.SIGPIPE, do_nothing_handler)
-    server_port = 7000
-    main(server_port)
+    main(SERVER_PORT)
 
