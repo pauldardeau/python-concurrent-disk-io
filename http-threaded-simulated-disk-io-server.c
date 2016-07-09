@@ -22,7 +22,7 @@ typedef struct _ThreadRequest {
 
 
 static const int SERVER_PORT = 7000;
-static const int READ_TIMEOUT_SECS = 4;
+static const int QUEUE_TIMEOUT_SECS = 4;
 static const int LISTEN_BACKLOG = 500;
 
 static char SERVER_NAME[] = "http-threaded-simulated-disk-io-server.c";
@@ -77,7 +77,7 @@ void handle_socket_request(ThreadRequest* thread_request) {
             long disk_read_time_ms = 0L;
 
             // has this request already timed out?
-            if (server_queue_time_secs >= READ_TIMEOUT_SECS) {
+            if (server_queue_time_secs >= QUEUE_TIMEOUT_SECS) {
                 printf("timeout (queue)\n");
                 rc = HTTP_STATUS_TIMEOUT;
             } else {
