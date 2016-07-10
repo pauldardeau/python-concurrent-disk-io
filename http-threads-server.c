@@ -47,7 +47,7 @@ void handle_socket_request(ThreadRequest* thread_request) {
     char response_body[256];
     const char* file_path = NULL;
     long tot_request_time_ms = 0L;
-    const char* rc = HTTP_STATUS_OK;
+    const char* rc = HTTP_STATUS_BAD_REQUEST;
 
     memset(request_text, 0, 256);
     memset(response_headers, 0, 256);
@@ -81,9 +81,6 @@ void handle_socket_request(ThreadRequest* thread_request) {
                 printf("timeout (queue)\n");
                 rc = HTTP_STATUS_TIMEOUT;
             } else {
-                // assume the worst
-                rc = HTTP_STATUS_BAD_REQUEST;
-
                 // tokenize input
                 const char* pos_space = strchr(request_text, ' ');
                 if (pos_space != NULL) {
@@ -105,6 +102,7 @@ void handle_socket_request(ThreadRequest* thread_request) {
                             disk_read_time_ms = req_time;
                             // ****  simulate disk read  ****
                             simulated_file_read(disk_read_time_ms);
+                            rc = HTTP_STATUS_OK;
                         }
                     }
                 }
