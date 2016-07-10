@@ -45,7 +45,7 @@ public static void handle_socket_request(Socket client_socket,
         string request_text =
             Encoding.ASCII.GetString(buffer, 0, bytes_read);
 
-        string rc = HTTP_STATUS_OK;
+        string rc = HTTP_STATUS_BAD_REQUEST;
         long tot_request_time_ms = 0;
         string file_path = "";
 
@@ -76,6 +76,7 @@ public static void handle_socket_request(Socket client_socket,
                             disk_read_time_ms = Convert.ToInt64(fields[1]);
                             file_path = fields[2];
                             simulated_file_read(disk_read_time_ms);
+                            rc = HTTP_STATUS_OK;
                         }
                     }
                 }

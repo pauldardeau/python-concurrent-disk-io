@@ -30,7 +30,7 @@ proc handle_socket_request(client_socket: Socket, receipt_timestamp: int64) {.th
         var request_text = TaintedString""
         client_socket.readLine(request_text)
 
-        var rc = HTTP_STATUS_OK
+        var rc = HTTP_STATUS_BAD_REQUEST
         var disk_read_time_ms = 0
         var file_path = ""
         var tot_request_time_ms: int64 = 0
@@ -57,10 +57,7 @@ proc handle_socket_request(client_socket: Socket, receipt_timestamp: int64) {.th
                         disk_read_time_ms = parseInt(fields[1])
                         file_path = fields[2]
                         simulated_file_read(disk_read_time_ms)
-                    else:
-                        rc = HTTP_STATUS_BAD_REQUEST
-                else:
-                    rc = HTTP_STATUS_BAD_REQUEST
+                        rc = HTTP_STATUS_OK
 
             # total request time is sum of time spent in queue and the
             # simulated disk read time

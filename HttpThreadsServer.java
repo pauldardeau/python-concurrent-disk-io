@@ -44,7 +44,7 @@ public class HttpThreadsServer {
 
             // read request from client
             String request_text = reader.readLine();
-            String rc = HTTP_STATUS_OK;
+            String rc = HTTP_STATUS_BAD_REQUEST;
             String file_path = "";
             long tot_request_time_ms = 0;
 
@@ -70,21 +70,14 @@ public class HttpThreadsServer {
                         StringTokenizer stArgs =
                             new StringTokenizer(stRequestLine.nextToken(),",");
                         if (stArgs.countTokens() == 3) {
-                            try {
-                                int rc_input =
-                                    Integer.parseInt(stArgs.nextToken());
-                                disk_read_time_ms =
-                                    Long.parseLong(stArgs.nextToken());
-                                file_path = stArgs.nextToken();
-                                simulated_file_read(disk_read_time_ms);
-                            } catch (Exception e) {
-                                rc = HTTP_STATUS_BAD_REQUEST;
-                            }
-                        } else {
-                            rc = HTTP_STATUS_BAD_REQUEST;
+                            int rc_input =
+                                Integer.parseInt(stArgs.nextToken());
+                            disk_read_time_ms =
+                                Long.parseLong(stArgs.nextToken());
+                            file_path = stArgs.nextToken();
+                            simulated_file_read(disk_read_time_ms);
+                            rc = HTTP_STATUS_OK;
                         }
-                    } else {
-                        rc = HTTP_STATUS_BAD_REQUEST;
                     }
                 }
 

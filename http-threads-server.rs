@@ -32,9 +32,9 @@ fn handle_socket_request(stream: &mut TcpStream,
                          receipt_timestamp: u64) {
     // read request from client
     let mut request_buffer = [0; 1024];
-    let mut rc = HTTP_STATUS_OK;
+    let mut rc = HTTP_STATUS_BAD_REQUEST;
     let mut file_path = "";
-    let tot_request_time_ms: u64;
+    let tot_request_time_ms: u64 = 0;
     let mut server_queue_time_ms: u64 = 0;
     let mut disk_read_time_ms: u64 = 0;
 
@@ -74,36 +74,21 @@ fn handle_socket_request(stream: &mut TcpStream,
                                             disk_read_time_ms = req_response_time_ms;
                                             file_path = fields[2];
                                             simulated_file_read(disk_read_time_ms);
-                                        } else {
-                                            rc = HTTP_STATUS_BAD_REQUEST;
+                                            rc = HTTP_STATUS_OK;
                                         }
                                     }
                                 }
                             }
                         }
-                    } else {
-                        // we didn't get the 3 input fields as expected
-                        rc = HTTP_STATUS_BAD_REQUEST;
                     }
-                } else {
-                    // we didn't get the HTTP request line as expected
-                    rc = HTTP_STATUS_BAD_REQUEST;
                 }
             }
-        } else {
-            // we didn't get any input
-            rc = HTTP_STATUS_BAD_REQUEST;
         }
 
         // total request time is sum of time spent in queue and the
         // simulated disk read time
         tot_request_time_ms =
             server_queue_time_ms + disk_read_time_ms;
-    } else {
-        // read of request failed
-        rc = HTTP_STATUS_BAD_REQUEST;
-        tot_request_time_ms = 0;
-        file_path = "";
     }
 
     // create response
