@@ -57,14 +57,13 @@ clear and somewhat similar (across languages).
 
 Client
 ------
-The client utility used for testing is 'make_requests.py'.
+The client utility used for testing is 'make_http_requests.sh'. It's
+just a shell script that runs Apache Bench (ab).
 
 The Test
 --------
 1. Start the server implementation
-2. Open multiple shell sessions (about 4 or 5)
-3. In each shell session, run 'python make_requests.py' so that
-all 4 or 5 shell sessions are running concurrently
+2. Run 'make_http_requests.sh' on same machine
 
 If the client requests experience timeout, then the problem scenario
 has manifested itself. If none of the concurrent client requests are
@@ -74,18 +73,18 @@ problem scenario is absent.
 Implementations
 ---------------
 
-| File                                 | Language      | Problem? | Tool |
-| ----                                 | --------      | -------- | ---------- |
-| SimulatedDiskIOServer.cs             | C#            | N        | Mono C# compiler version 4.2.1.0 |
-| SimulatedDiskIOServer.d              | D             | N        | DMD64 D Compiler v2.069.2-devel |
-| SimulatedDiskIOServer.java           | Java (JVM)    | N        | openjdk version 1.8.0 |
-| SimulatedDiskIOServer.nim            | Nim           | N        | Nim 0.14.2 |
-| SimulatedDiskIOServer.scala          | Scala (JVM)   | N        | Scala compiler version 2.11.8 |
-| threaded-simulated-disk-io-server.py | Python (JVM)  | N        | Jython 2.7.0 |
-| threaded-simulated-disk-io-server.py | Python        | N        | CPython 2.7.6 |
-| simulated-disk-io-server.c           | C             | N        | gcc 4.8.5 |
-| simulated-disk-io-server.go          | Go            | N        | go version go1.2.1 linux/amd64 |
-| eventlet-simulated-disk-io-server.py | Python        | **Y**    | CPython 2.7 and eventlet |
-| simulated-disk-io-server.rs          | Rust          | N        | Rust 1.9 |
+| File                    | Language      | Problem? | Tool |
+| ----                    | --------      | -------- | ---------- |
+| HttpThreadsServer.cs    | C#            | N        | Mono C# compiler version 4.2.1.0 |
+| HttpThreadsServer.d     | D             | N        | DMD64 D Compiler v2.069.2-devel |
+| HttpThreadsServer.java  | Java (JVM)    | N        | openjdk version 1.8.0 |
+| HttpThreadsServer.nim   | Nim           | N        | Nim 0.14.2 |
+| HttpThreadsServer.scala | Scala (JVM)   | N        | Scala compiler version 2.11.8 |
+| http-threads-server.py  | Python (JVM)  | N        | Jython 2.7.0 |
+| http-threads-server.py  | Python        | N        | CPython 2.7.6 |
+| http-threads-server.c   | C             | N        | gcc 4.8.5 |
+| http-server.go          | Go            | N        | go version go1.2.1 linux/amd64 |
+| http-eventlet-server.py | Python        | **Y**    | CPython 2.7 and eventlet |
+| http-threads-server.rs  | Rust          | N        | Rust 1.9 |
 
 
