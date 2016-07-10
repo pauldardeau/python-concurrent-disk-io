@@ -79,6 +79,7 @@ Implementations
 | HttpThreadsServer.d     | D             | N        | DMD64 D Compiler v2.069.2-devel |
 | HttpThreadsServer.java  | Java (JVM)    | N        | openjdk version 1.8.0 |
 | HttpThreadsServer.nim   | Nim           | N        | Nim 0.14.2 |
+| HttpThreadsServer.pas   | Pascal        | N        | fpc 3.0 |
 | HttpThreadsServer.scala | Scala (JVM)   | N        | Scala compiler version 2.11.8 |
 | http-threads-server.py  | Python (JVM)  | N        | Jython 2.7.0 |
 | http-threads-server.py  | Python        | N        | CPython 2.7.6 |
