@@ -61,7 +61,9 @@ fn handle_socket_request(stream: &mut TcpStream,
                     let http_status_code: u32;
                     let fields: Vec<&str> = args_text.split(',').collect();
                     if fields.len() == 3 {
-                        let parse_rc_result = fields[0].parse();
+                        let mut rc_as_string = fields[0];
+                        rc_as_string = rc_as_string.trim_matches('/');
+                        let parse_rc_result = rc_as_string.parse();
                         match parse_rc_result {
                             Err(_) => {},
                             Ok(rc_input) => {
@@ -104,6 +106,8 @@ fn handle_socket_request(stream: &mut TcpStream,
                                    rc,
                                    SERVER_NAME,
                                    response_body.len());
+
+    //println!("rc: {0}", rc);
 
     // return response to client
     let _ = stream.write_all(response_headers.as_bytes()); //.unwrap();
