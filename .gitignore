@@ -1,4 +1,6 @@
+HttpThreadsServer
+http-threads-server
 nimcache/
-.o
-.class
-.exe
+*.o
+*.class
+*.exe
