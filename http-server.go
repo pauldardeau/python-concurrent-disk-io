@@ -1,4 +1,4 @@
-// go - simulate occasional problematic (long blocking) requests for disk IO
+// go
 // install tools:
 //   sudo curl -O https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
 //   tar xf go1.6.linux-amd64.tar.gz
@@ -29,7 +29,7 @@ const (
     QUEUE_TIMEOUT_SECS = 4
     LISTEN_BACKLOG = 500
 
-    SERVER_NAME = "http-simulated-disk-io-server.go"
+    SERVER_NAME = "http-server.go"
     HTTP_STATUS_OK = "200 OK"
     HTTP_STATUS_TIMEOUT = "408 TIMEOUT"
     HTTP_STATUS_BAD_REQUEST = "400 BAD REQUEST"
