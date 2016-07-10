@@ -25,40 +25,34 @@ def simulated_file_read(elapsed_time_ms):
 
 
 def handle_socket_request(sock, receipt_timestamp):
-    request_text = ''
-    try:
-        buffer_text = sock.recv(1024)
-        if buffer_text is not None and len(buffer_text) > 0:
-            request_text = buffer_text
-    except socket.error:
-        request_text = ''
+    reader = sock.makefile('r')
+    writer = sock.makefile('w')
+    request_text = reader.readline()
+    reader.close()
 
     rc = HTTP_STATUS_BAD_REQUEST
     tot_request_time_ms = 0
     file_path = ''
 
     if len(request_text) > 0:
-        request_text = request_text.rstrip()
         start_processing_timestamp = time.time()
         queue_time_ms = start_processing_timestamp - receipt_timestamp
         queue_time_secs = queue_time_ms / 1000
-
-        disk_read_time_ms = 0
 
         # has this request already timed out?
         if queue_time_secs >= QUEUE_TIMEOUT_SECS:
             print("timeout (queue)")
             rc = HTTP_STATUS_TIMEOUT
         else:
-            line_tokens = string.split(request_text, ' ')
+            line_tokens = request_text.split(' ')
             if len(line_tokens) > 1:
                 request_method = line_tokens[0]
-                args_text = line_tokens[1]
-                fields = string.split(args_text, ',')
+                args = line_tokens[1]
+                fields = args.split(',')
                 if len(fields) == 3:
-                    first_field = fields[0].strip('/')
+                    #first_field = fields[0].strip('/')
                     #rc = int(first_field)
-                    disk_read_time_ms = long(fields[1])
+                    disk_read_time_ms = int(fields[1])
                     file_path = fields[2]
                     simulated_file_read(disk_read_time_ms)
                     rc = HTTP_STATUS_OK
@@ -77,16 +71,13 @@ def handle_socket_request(sock, receipt_timestamp):
     response_headers += "Connection: close\n"
     response_headers += "\n"
 
-    try:
-        sock.send(response_headers)
-        sock.send(response_body)
-    except socket.error:
-        pass
+    writer.write(response_headers)
+    writer.write(response_body)
+    #writer.flush()
 
-    try:
-        sock.close()
-    except socket.error:
-        pass
+    #reader.close()
+    writer.close()
+    sock.close()
 
 
 def do_nothing_handler(sig, dummy):
