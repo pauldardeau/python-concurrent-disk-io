@@ -1,0 +1,4 @@
+nimcache/
+.o
+.class
+.exe
