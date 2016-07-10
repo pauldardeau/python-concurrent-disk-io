@@ -62,14 +62,16 @@ object HttpThreadsServer {
                     rc = HTTP_STATUS_TIMEOUT
                 } else {
                     val stRequest = new StringTokenizer(request_text, " ")
-                    if (stRequest.countTokens() == 2) {
+                    if (stRequest.countTokens() > 1) {
                         val request_method = stRequest.nextToken()
                         val request_args = stRequest.nextToken()
                         val stArgs = new StringTokenizer(request_args, ",")
                         if (stArgs.countTokens() == 3) {
                             try {
+                                var rc_as_string = stArgs.nextToken();
+                                rc_as_string = rc_as_string.substring(1);
                                 val rc_input =
-                                    Integer.parseInt(stArgs.nextToken())
+                                    Integer.parseInt(rc_as_string)
                                 disk_read_time_ms = stArgs.nextToken().toLong
                                 file_path = stArgs.nextToken()
                                 simulated_file_read(disk_read_time_ms)
