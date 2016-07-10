@@ -70,13 +70,21 @@ public class HttpThreadsServer {
                         StringTokenizer stArgs =
                             new StringTokenizer(stRequestLine.nextToken(),",");
                         if (stArgs.countTokens() == 3) {
-                            int rc_input =
-                                Integer.parseInt(stArgs.nextToken());
-                            disk_read_time_ms =
-                                Long.parseLong(stArgs.nextToken());
-                            file_path = stArgs.nextToken();
-                            simulated_file_read(disk_read_time_ms);
-                            rc = HTTP_STATUS_OK;
+                            String rc_as_string = stArgs.nextToken();
+                            if (rc_as_string.startsWith("/")) {
+                                rc_as_string = rc_as_string.substring(1);
+                            }
+                            int rc_input = 0;
+                            try {
+                                Integer.parseInt(rc_as_string);
+                                disk_read_time_ms =
+                                    Long.parseLong(stArgs.nextToken());
+                                file_path = stArgs.nextToken();
+                                simulated_file_read(disk_read_time_ms);
+                                rc = HTTP_STATUS_OK;
+                            } catch (Throwable t) {
+                                rc = HTTP_STATUS_BAD_REQUEST;
+                            }
                         }
                     }
                 }
