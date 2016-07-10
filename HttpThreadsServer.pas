@@ -1,5 +1,5 @@
 { Pascal (fpc 3.0)
- to build: fpc SimulatedDiskIOServer.pas
+ to build: fpc HttpThreadsServer.pas
 }
 
 program HttpThreadsServer;
