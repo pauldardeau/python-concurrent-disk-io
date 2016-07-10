@@ -1,6 +1,6 @@
-// Scala - simulate occasional problematic (long blocking) requests for disk IO
-// to build: scalac HttpThreadedSimulatedDiskIOServer.scala
-// to run: scala HttpThreadedSimulatedDiskIOServer
+// Scala
+// to build: scalac HttpThreadsServer.scala
+// to run: scala HttpThreadsServer
 
 import java.net._
 import java.io._
@@ -8,13 +8,13 @@ import java.text._
 import java.util._
 
 
-object HttpThreadedSimulatedDiskIOServer {
+object HttpThreadsServer {
 
     val SERVER_PORT = 7000
     val QUEUE_TIMEOUT_SECS = 4
     val LISTEN_BACKLOG = 500
 
-    val SERVER_NAME = "HttpThreadedSimulatedDiskIOServer.scala"
+    val SERVER_NAME = "HttpThreadsServer.scala"
     val HTTP_STATUS_OK = "200 OK"
     val HTTP_STATUS_TIMEOUT = "408 TIMEOUT"
     val HTTP_STATUS_BAD_REQUEST = "400 BAD REQUEST"
