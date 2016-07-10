@@ -75,9 +75,15 @@ def handle_socket_request(sock, receipt_timestamp):
     writer.write(response_body)
     #writer.flush()
 
-    #reader.close()
-    writer.close()
-    sock.close()
+    try:
+        writer.close()
+    except socket.error:
+        pass
+
+    try:
+        sock.close()
+    except socket.error:
+        pass
 
 
 def do_nothing_handler(sig, dummy):
