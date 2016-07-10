@@ -41,6 +41,7 @@ public static void handle_socket_request(Socket client_socket,
         byte[] buffer = new Byte[1024];
         // read request from client
         int bytes_read = client_socket.Receive(buffer);
+
         // read request from client
         string request_text =
             Encoding.ASCII.GetString(buffer, 0, bytes_read);
@@ -72,8 +73,13 @@ public static void handle_socket_request(Socket client_socket,
                         string args = line_tokens[1];
                         string[] fields = args.Split(',');
                         if (fields.Length == 3) {
-                            int rc_input = Convert.ToInt32(fields[0]);
-                            disk_read_time_ms = Convert.ToInt64(fields[1]);
+                            string rc_as_string = fields[0];
+                            // strip off leading '/'
+                            rc_as_string = rc_as_string.Substring(1);
+                            string service_time_as_string = fields[1];
+                            int rc_input = Convert.ToInt32(rc_as_string);
+                            disk_read_time_ms =
+                                Convert.ToInt64(service_time_as_string);
                             file_path = fields[2];
                             simulated_file_read(disk_read_time_ms);
                             rc = HTTP_STATUS_OK;
@@ -97,6 +103,8 @@ public static void handle_socket_request(Socket client_socket,
         response_headers += "Connection: close\n";
         response_headers += "\n";
 
+        //Console.WriteLine(rc);
+
         byte[] raw_response_headers =
             Encoding.ASCII.GetBytes(response_headers);
         client_socket.Send(raw_response_headers);
@@ -105,6 +113,7 @@ public static void handle_socket_request(Socket client_socket,
         client_socket.Send(raw_response_body);
         client_socket.Shutdown(SocketShutdown.Both);
     } catch (Exception) {
+        Console.WriteLine("exception caught");
     } finally {
         // close client socket connection
         try {
