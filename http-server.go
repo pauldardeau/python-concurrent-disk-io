@@ -4,8 +4,8 @@
 //   tar xf go1.6.linux-amd64.tar.gz
 //   sudo mv go /usr/local
 //   export PATH=/usr/local/go/bin:$PATH
-// to build: go build http-simulated-disk-io-server.go
-// to run: go run http-simulated-disk-io-server.go
+// to build: go build http-server.go
+// to run: ./http-server
 
 package main
 
@@ -70,7 +70,7 @@ func handle_socket_request(thread_request *ThreadRequest) {
                 rc = HTTP_STATUS_TIMEOUT
             } else {
                 var line_tokens = strings.Split(request_line, " ")
-                if len(line_tokens) == 2 {
+                if len(line_tokens) > 1 {
                     //request_method := line_tokens[0]
                     args_text := line_tokens[1]
                     var fields = strings.Split(args_text, ",")
@@ -111,7 +111,6 @@ func handle_socket_request(thread_request *ThreadRequest) {
                                        rc,
                                        SERVER_NAME,
                                        len(response_body))
-
     // return response to client
     thread_request.client_socket.Write([]byte(response_headers))
     thread_request.client_socket.Write([]byte(response_body))
