@@ -1,6 +1,6 @@
-// rust - simulate occasional problematic (long blocking) requests for disk IO
+// rust
 // language version: 1.9.0
-// to build: rustc http-threaded-simulated-disk-io-server.rs
+// to build: rustc http-threads-server.rs
 // NOTE: this is my first Rust program, so much of it is probably crappy
 
 use std::io::Read;
@@ -14,7 +14,7 @@ use std::time::Duration;
 const QUEUE_TIMEOUT_SECS: u32 = 4;
 //const LISTEN_BACKLOG: u32 = 500;
 
-const SERVER_NAME: &'static str = "http-threaded-simulated-disk-io-server.rs";
+const SERVER_NAME: &'static str = "http-threads-server.rs";
 const HTTP_STATUS_OK: &'static str =  "200 OK";
 const HTTP_STATUS_TIMEOUT: &'static str = "408 TIMEOUT";
 const HTTP_STATUS_BAD_REQUEST: &'static str = "400 BAD REQUEST";

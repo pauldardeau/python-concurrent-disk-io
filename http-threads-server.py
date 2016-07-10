@@ -1,5 +1,5 @@
-# python threads - simulate occasional problematic (long blocking) requests
-# to run: python http-threaded-simulated-disk-io-server.py
+# python
+# to run: python http-threads-server.py
 
 
 import string
@@ -14,7 +14,7 @@ SERVER_PORT = 7000
 QUEUE_TIMEOUT_SECS = 4
 LISTEN_BACKLOG = 500
 
-SERVER_NAME = 'http-threaded-simulated-disk-io-server.py'
+SERVER_NAME = 'http-threads-server.py'
 HTTP_STATUS_OK = '200 OK'
 HTTP_STATUS_TIMEOUT = '408 TIMEOUT'
 HTTP_STATUS_BAD_REQUEST = '400 BAD REQUEST'

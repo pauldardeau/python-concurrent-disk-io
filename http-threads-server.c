@@ -1,6 +1,6 @@
-// simulate occasional problematic (long blocking) requests for disk IO
+// C
 // to build:
-//    gcc -Wall http-threaded-simulated-disk-io-server.c -o http-threaded-simulated-disk-io-server -lm -lpthread
+//    gcc -Wall http-threads-server.c -o http-threads-server -lm -lpthread
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +25,7 @@ static const int SERVER_PORT = 7000;
 static const int QUEUE_TIMEOUT_SECS = 4;
 static const int LISTEN_BACKLOG = 500;
 
-static char SERVER_NAME[] = "http-threaded-simulated-disk-io-server.c";
+static char SERVER_NAME[] = "http-threads-server.c";
 static char HTTP_STATUS_OK[] = "200 OK";
 static char HTTP_STATUS_TIMEOUT[] = "408 TIMEOUT";
 static char HTTP_STATUS_BAD_REQUEST[] = "400 BAD REQUEST";
