@@ -1,6 +1,6 @@
 // C
 // to build:
-//    gcc -Wall http-threads-server.c -o http-threads-server -lm -lpthread
+//    gcc -O2 -Wall http-threads-server.c -o http-threads-server -lm -lpthread
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,10 +9,12 @@
 #include <time.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#define BUFFER_SIZE 1024
 
 typedef struct _ThreadRequest {
     int client_socket;
@@ -42,21 +44,21 @@ void simulated_file_read(long disk_read_time_ms) {
 }
 
 void handle_socket_request(ThreadRequest* thread_request) {
-    char request_text[256];
-    char response_headers[256];
-    char response_body[256];
+    char request_text[BUFFER_SIZE];
+    char response_headers[BUFFER_SIZE];
+    char response_body[BUFFER_SIZE];
     const char* file_path = NULL;
     long tot_request_time_ms = 0L;
     const char* rc = HTTP_STATUS_BAD_REQUEST;
 
-    memset(request_text, 0, 256);
-    memset(response_headers, 0, 256);
-    memset(response_body, 0, 256);
+    memset(request_text, 0, BUFFER_SIZE);
+    memset(response_headers, 0, BUFFER_SIZE);
+    memset(response_body, 0, BUFFER_SIZE);
 
     // read request from client
     const int bytes_read = read(thread_request->client_socket,
                                 request_text,
-                                1024);
+                                BUFFER_SIZE);
 
     // read from socket succeeded?
     if (bytes_read > 0) {
@@ -116,11 +118,13 @@ void handle_socket_request(ThreadRequest* thread_request) {
     }
 
     // create response text
-    snprintf(response_body, 255, "%ld,%s",
+    snprintf(response_body, BUFFER_SIZE, "%ld,%s",
              tot_request_time_ms,
              file_path);
 
-    snprintf(response_headers, 255,
+    size_t len_response_body = strlen(response_body);
+
+    snprintf(response_headers, BUFFER_SIZE,
              "HTTP/1.1 %s\n"
              "Server: %s\n"
              "Content-Length: %zd\n"
@@ -128,16 +132,23 @@ void handle_socket_request(ThreadRequest* thread_request) {
              "\n",
              rc,
              SERVER_NAME,
-             strlen(response_body));
+             len_response_body);
+
+    size_t bytes_written;
+    size_t len_response_headers = strlen(response_headers);
 
     // return response to client
-    write(thread_request->client_socket,
-          response_headers,
-          strlen(response_headers));
+    bytes_written = write(thread_request->client_socket,
+                          response_headers,
+                          len_response_headers);
 
-    write(thread_request->client_socket,
-          response_body,
-          strlen(response_body));
+    if (bytes_written == len_response_headers) {
+        bytes_written = write(thread_request->client_socket,
+                              response_body,
+                              len_response_body);
+    }
+
+    shutdown(thread_request->client_socket, SHUT_WR);
 
     // close client socket connection
     close(thread_request->client_socket);
@@ -156,6 +167,9 @@ int main(int argc, char* argv[]) {
     struct sockaddr_in serv_addr;
     struct sockaddr_in cli_addr;
     socklen_t cli_addr_len = sizeof(cli_addr);
+
+    // install our signal handlers
+    signal(SIGPIPE, SIG_IGN);
 
     server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket < 0) {
