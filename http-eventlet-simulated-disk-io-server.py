@@ -11,9 +11,9 @@ SERVER_PORT = 7000
 QUEUE_TIMEOUT_SECS = 4
 LISTEN_BACKLOG = 500
 
-SERVER_NAME = 'eventlet-simulated-disk-io-server.py'
+SERVER_NAME = 'http-eventlet-simulated-disk-io-server.py'
 HTTP_STATUS_OK = '200 OK'
-HTTP_STATUS_QUEUE_TIMEOUT = '408 TIMEOUT'
+HTTP_STATUS_TIMEOUT = '408 TIMEOUT'
 HTTP_STATUS_BAD_REQUEST = '400 BAD REQUEST'
 
 
@@ -80,7 +80,7 @@ def main(server_port):
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind(('', server_port))
     server_socket.listen(LISTEN_BACKLOG)
-    print("server listening on port %d" % server_port)
+    print("server (%s) listening on port %d" % (SERVER_NAME, server_port))
 
     try:
         while True:
