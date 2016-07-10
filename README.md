@@ -57,13 +57,13 @@ clear and somewhat similar (across languages).
 
 Client
 ------
-The client utility used for testing is 'make_http_requests.sh'. It's
+The client utility used for testing is 'make-http-requests.sh'. It's
 just a shell script that runs Apache Bench (ab).
 
 The Test
 --------
 1. Start the server implementation
-2. Run 'make_http_requests.sh' on same machine
+2. Run 'make-http-requests.sh' on same machine
 
 If the client requests experience timeout, then the problem scenario
 has manifested itself. If none of the concurrent client requests are
