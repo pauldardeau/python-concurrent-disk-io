@@ -1,5 +1,5 @@
-# nim - simulate occasional problematic (long blocking) requests
-# to build: nim c --threads:on --d:release HttpThreadedSimulatedDiskIOServer.nim
+# nim
+# to build: nim c --threads:on --d:release HttpThreadsServer.nim
 
 # helpful link: http://goran.krampe.se/2014/10/25/nim-socketserver/
 
@@ -14,7 +14,7 @@ const SERVER_PORT = 7000
 const QUEUE_TIMEOUT_SECS = 4
 const LISTEN_BACKLOG = 500
 
-const SERVER_NAME = "HttpThreadedSimulatedDiskIOServer.nim" 
+const SERVER_NAME = "HttpThreadsServer.nim" 
 const HTTP_STATUS_OK = "200 OK"
 const HTTP_STATUS_TIMEOUT = "408 TIMEOUT"
 const HTTP_STATUS_BAD_REQUEST = "400 BAD REQUEST"

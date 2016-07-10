@@ -1,7 +1,7 @@
-// C# - simulate occasional problematic (long blocking) requests for disk IO
+// C# - developed using mono
 // install tools: sudo apt-get install mono-complete
-// to build: mcs HttpThreadedSimulatedDiskIOServer.cs
-// to run: mono HttpThreadedSimulatedDiskIOServer.exe
+// to build: mcs HttpThreadsServer.cs
+// to run: mono HttpThreadsServer.exe
 
 using System;
 using System.IO;
@@ -14,13 +14,13 @@ using System.Threading;
 namespace diskioserver {
 
 
-public class HttpThreadedSimulatedDiskIOServer {
+public class HttpThreadsServer {
 
 public static int SERVER_PORT = 7000;
 public static int QUEUE_TIMEOUT_SECS = 4;
 public static int LISTEN_BACKLOG = 500;
 
-public static string SERVER_NAME = "HttpThreadedSimulatedDiskIOServer.cs";
+public static string SERVER_NAME = "HttpThreadsServer.cs";
 public static string HTTP_STATUS_OK = "200 OK";
 public static string HTTP_STATUS_TIMEOUT = "408 TIMEOUT";
 public static string HTTP_STATUS_BAD_REQUEST = "400 BAD REQUEST";

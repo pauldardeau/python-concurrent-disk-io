@@ -1,5 +1,5 @@
-// D - simulate occasional problematic (long blocking) requests for disk IO
-// to build: dmd HttpThreadedSimulatedDiskIOServer.d
+// D
+// to build: dmd HttpThreadsServer.d
 
 import core.thread;
 import std.concurrency;
@@ -14,7 +14,7 @@ static int SERVER_PORT = 7000;
 static int QUEUE_TIMEOUT_SECS = 4;
 static int LISTEN_BACKLOG = 500;
 
-static string SERVER_NAME = "HttpThreadedSimulatedDiskIOServer.d";
+static string SERVER_NAME = "HttpThreadsServer.d";
 static string HTTP_STATUS_OK = "200 OK";
 static string HTTP_STATUS_TIMEOUT = "408 TIMEOUT";
 static string HTTP_STATUS_BAD_REQUEST = "400 BAD REQUEST";

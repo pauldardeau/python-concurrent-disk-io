@@ -1,10 +1,10 @@
-// Java - simulate occasional problematic (long blocking) requests for disk IO
+// Java
 // install tools:
 //    sudo add-apt-repository ppa:openjdk-r/ppa
 //    sudo apt-get update
 //    sudo apt-get install openjdk-8-jdk
-// to build: javac HttpThreadedSimulatedDiskIOServer.java
-// to run: java HttpThreadedSimulatedDiskIOServer
+// to build: javac HttpThreadsServer.java
+// to run: java HttpThreadsServer
 
 import java.net.*;
 import java.io.*;
@@ -12,13 +12,13 @@ import java.text.*;
 import java.util.*;
 
 
-public class HttpThreadedSimulatedDiskIOServer {
+public class HttpThreadsServer {
 
     public static final int SERVER_PORT = 7000;
     public static final int QUEUE_TIMEOUT_SECS = 4;
     public static final int LISTEN_BACKLOG = 500;
 
-    public static final String SERVER_NAME = "HttpThreadedSimulatedDiskIOServer.java";
+    public static final String SERVER_NAME = "HttpThreadsServer.java";
     public static final String HTTP_STATUS_OK = "200 OK";
     public static final String HTTP_STATUS_TIMEOUT = "408 TIMEOUT";
     public static final String HTTP_STATUS_BAD_REQUEST = "400 BAD REQUEST";
