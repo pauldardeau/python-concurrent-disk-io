@@ -34,7 +34,7 @@ fn handle_socket_request(stream: &mut TcpStream,
     let mut request_buffer = [0; 1024];
     let mut rc = HTTP_STATUS_BAD_REQUEST;
     let mut file_path = "";
-    let tot_request_time_ms: u64 = 0;
+    let mut tot_request_time_ms: u64 = 0;
     let mut server_queue_time_ms: u64 = 0;
     let mut disk_read_time_ms: u64 = 0;
 
@@ -106,8 +106,8 @@ fn handle_socket_request(stream: &mut TcpStream,
                                    response_body.len());
 
     // return response to client
-    stream.write_all(response_headers.as_bytes()).unwrap();
-    stream.write_all(response_body.as_bytes()).unwrap();
+    let _ = stream.write_all(response_headers.as_bytes()); //.unwrap();
+    let _ = stream.write_all(response_body.as_bytes()); //.unwrap();
 
     let _ = stream.shutdown(Shutdown::Both);
 }
@@ -116,7 +116,7 @@ fn main() {
     let server_port = 7000;
     //TODO: build string using server_port
     let listener = TcpListener::bind("127.0.0.1:7000").unwrap();
-    println!("server listening on port {0}", server_port);
+    println!("server ({0}) listening on port {1}", SERVER_NAME, server_port);
 
     for stream in listener.incoming() {
         match stream {
