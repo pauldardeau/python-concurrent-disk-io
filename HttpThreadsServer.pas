@@ -17,6 +17,7 @@ type
 Const
     SERVER_PORT = 7000;
     QUEUE_TIMEOUT_SECS = 4;
+    BUFFER_SIZE = 1024;
 
     SERVER_NAME = 'HttpThreadsServer.pas';
     HTTP_STATUS_OK = '200 OK';
@@ -65,7 +66,7 @@ var
 begin
     request_text := '';
     { read request from client }
-    bytes_read := fpRecv(client_socket, @request_text[1], 255, 0);
+    bytes_read := fpRecv(client_socket, @request_text[1], BUFFER_SIZE, 0);
 
     rc := HTTP_STATUS_BAD_REQUEST;
     tot_request_time_ms := 0;
@@ -106,6 +107,9 @@ begin
                     second_token := ExtractWord(2, request_args, [',']);
                     file_path := ExtractWord(3, request_args, [',']);
 
+                    { strip off leading '/' }
+                    first_token := MidStr(first_token, 2, Length(first_token)-1);
+
                     rc_input := StrToInt(first_token);
                     { rc := rc_input; }
                     disk_read_time_ms := StrToInt(second_token);
@@ -126,12 +130,14 @@ begin
                      ',' +
                      file_path;
 
-    response_headers := 'HTTP/1.1 ' + rc + '\n' +
-                        'Server :' + SERVER_NAME + '\n' +
+    response_headers := 'HTTP/1.1 ' + rc + AnsiChar(#10) +
+                        'Server :' + SERVER_NAME + AnsiChar(#10) +
                         'Content-Length: ' +
-                            IntToStr(Length(response_body))+ '\n' +
-                        'Connection: close\n' +
-                        '\n';
+                            IntToStr(Length(response_body))+ AnsiChar(#10) +
+                        'Connection: close' + AnsiChar(#10) +
+                        AnsiChar(#10);
+
+    { Writeln(rc); }
 
     { return response text to client }
     fpSend(client_socket,
@@ -142,6 +148,8 @@ begin
            @response_body[1],
            Length(response_body),
            0);
+
+    fpShutdown(client_socket, 2);
 
     { close client socket connection }
     CloseSocket(client_socket);
