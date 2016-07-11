@@ -17,6 +17,7 @@ type
 Const
     SERVER_PORT = 7000;
     QUEUE_TIMEOUT_SECS = 4;
+    LISTEN_BACKLOG = 500;
     BUFFER_SIZE = 1024;
 
     SERVER_NAME = 'HttpThreadsServer.pas';
@@ -180,6 +181,7 @@ var
     ClientAddrSize: LongInt;
     request_record: PRequestRecord;
     multithreaded: boolean;
+    sock_opt_arg: integer;
 
 begin
     multithreaded := true;
@@ -190,8 +192,12 @@ begin
         Halt(1);
     end;
 
-    { server_socket.socket.SetReuseAddress(TRUE); }
-    { server_socket.socket.SetBlocking(TRUE); }
+    sock_opt_arg := 1;
+    fpSetSockOpt(server_socket,
+                 SOL_SOCKET,
+                 SO_REUSEADDR,
+                 @sock_opt_arg,
+                 SizeOf(sock_opt_arg));
 
     ServerAddr.sin_family := AF_INET;
     ServerAddr.sin_port := htons(SERVER_PORT);
@@ -205,7 +211,7 @@ begin
         Halt(1);
     end;
 
-    if fpListen(server_socket, 1) <> 0 then
+    if fpListen(server_socket, LISTEN_BACKLOG) <> 0 then
     begin
         WriteLn('error: listen on socket server');
         Halt(1);
