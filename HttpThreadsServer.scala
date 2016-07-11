@@ -119,8 +119,9 @@ object HttpThreadsServer {
     }
 
     def main(args: Array[String]) = {
-        //TODO: set listen backlog?
-        val server_socket = new ServerSocket(SERVER_PORT)
+        val server_socket = new ServerSocket(SERVER_PORT, LISTEN_BACKLOG)
+        server_socket.setReuseAddress(true)
+
         println("server (" +
                 SERVER_NAME +
                 ") listening on port " +
