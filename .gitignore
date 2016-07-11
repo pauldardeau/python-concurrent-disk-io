@@ -1,6 +1,7 @@
 HttpThreadsServer
 http-threads-server
 nimcache/
+*.pyc
 *.o
 *.class
 *.exe
