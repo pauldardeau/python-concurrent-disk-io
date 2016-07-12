@@ -123,7 +123,7 @@ func main() {
     //TODO: set listen backlog
     //TODO: set reuse addr
     server_socket, err := net.Listen("tcp",
-                                     fmt.Sprintf("localhost:%d", SERVER_PORT))
+                                     fmt.Sprintf(":%d", SERVER_PORT))
 
     if err != nil {
         fmt.Println("error: unable to create server socket on port %s",
