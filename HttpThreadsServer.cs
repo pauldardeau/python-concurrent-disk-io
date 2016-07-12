@@ -125,7 +125,7 @@ public static void handle_socket_request(Socket client_socket,
 
 public static void Main(string[] args) {
     try {
-        IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Loopback,
+        IPEndPoint localEndPoint = new IPEndPoint(IPAddress.Any,
                                                   SERVER_PORT);
         Socket server_socket =
             new Socket(IPAddress.Loopback.AddressFamily,
