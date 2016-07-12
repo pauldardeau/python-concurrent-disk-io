@@ -119,7 +119,7 @@ fn handle_socket_request(stream: &mut TcpStream,
 fn main() {
     let server_port = 7000;
     //TODO: build string using server_port
-    let listener = TcpListener::bind("127.0.0.1:7000").unwrap();
+    let listener = TcpListener::bind("0.0.0.0:7000").unwrap();
     println!("server ({0}) listening on port {1}", SERVER_NAME, server_port);
 
     for stream in listener.incoming() {
