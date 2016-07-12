@@ -101,8 +101,7 @@ void main(string[] args) {
     server_socket.setOption(SocketOptionLevel.SOCKET,
                             SocketOption.REUSEADDR,
                             true);
-    server_socket.bind(new InternetAddress("localhost",
-                                           to!ushort(SERVER_PORT)));
+    server_socket.bind(new InternetAddress(to!ushort(SERVER_PORT)));
     server_socket.listen(LISTEN_BACKLOG);
 
     writefln(format("server (%s) listening on port %d",
