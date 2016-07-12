@@ -82,7 +82,7 @@ proc handle_socket_request(client_socket: Socket, receipt_timestamp: int64) {.th
 proc main(server_port: int) =
     let server_socket: Socket = newSocket()
     server_socket.setSockOpt(OptReuseAddr, true)
-    server_socket.bindAddr(Port(server_port), "0.0.0.0")
+    server_socket.bindAddr(Port(server_port))
     server_socket.listen(LISTEN_BACKLOG)
     let startup_msg = format("server ($1) listening on port $2",
                              SERVER_NAME,
